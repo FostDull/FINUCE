@@ -12,3 +12,11 @@ app.include_router(health.router)
 @app.get("/")
 def root():
     return {"message": "FinUCE API running"}
+
+
+@app.post("/login")
+def login():
+    return {
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+        "token_type": "bearer"
+    }
