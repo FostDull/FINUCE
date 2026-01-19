@@ -1,17 +1,19 @@
 from pydantic import BaseModel
-from datetime import datetime
 from uuid import UUID
-from typing import Literal
+from datetime import datetime
 
 
 class TransactionCreate(BaseModel):
     account_id: UUID
+    type: str
     amount: float
-    type: Literal["credit", "debit"]
 
 
-class TransactionResponse(TransactionCreate):
+class TransactionResponse(BaseModel):
     id: UUID
+    account_id: UUID
+    type: str
+    amount: float
     created_at: datetime
 
     class Config:

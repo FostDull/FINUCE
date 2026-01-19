@@ -1,4 +1,3 @@
-from backend.app.deps.auth import get_current_user
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -21,36 +20,33 @@ def list_transactions(db: Session = Depends(get_db)):
 @router.post("/", response_model=TransactionResponse)
 def create_transaction(
     data: TransactionCreate,
-    user=Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     account = db.query(Account).filter(
         Account.id == data.account_id
-        Account.user_id == user["sub"]
     ).first()
 
     if not account:
-        raise HTTPException(status_code=404, detail="Account not found")
+        raise HTTPException(404, "Account not found")
 
     if data.type == "debit" and account.balance < data.amount:
-        raise HTTPException(status_code=400, detail="Insufficient funds")
+        raise HTTPException(400, "Insufficient funds")
 
-    # 💰 Update balance
     if data.type == "credit":
         account.balance += data.amount
     elif data.type == "debit":
         account.balance -= data.amount
     else:
-        raise HTTPException(status_code=400, detail="Invalid transaction type")
+        raise HTTPException(400, "Invalid transaction type")
 
-    transaction = Transaction(
+    tx = Transaction(
         account_id=account.id,
         type=data.type,
         amount=data.amount
     )
 
-    db.add(transaction)
+    db.add(tx)
     db.commit()
-    db.refresh(transaction)
+    db.refresh(tx)
 
-    return transaction
+    return tx

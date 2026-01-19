@@ -2,6 +2,9 @@ import os
 import requests
 from jose import jwt, JWTError
 from functools import lru_cache
+from dotenv import load_dotenv
+
+load_dotenv()
 
 SUPABASE_PROJECT_URL = os.getenv("SUPABASE_PROJECT_URL")
 SUPABASE_JWT_AUDIENCE = os.getenv("SUPABASE_JWT_AUDIENCE", "authenticated")

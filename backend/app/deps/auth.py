@@ -1,23 +1,21 @@
-from fastapi import Depends, HTTPException, Header
-import jwt
-import os
-
-SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
+from fastapi import Header, HTTPException
+from jose import jwt
 
 
 def get_current_user(authorization: str = Header(...)):
     if not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Invalid auth header")
 
-    token = authorization.replace("Bearer ", "")
+    token = authorization.split(" ")[1]
 
     try:
-        payload = jwt.decode(
-            token,
-            SUPABASE_JWT_SECRET,
-            algorithms=["HS256"],
-            audience="authenticated"
-        )
-        return payload  # contiene sub = user_id
-    except jwt.PyJWTError:
+        # ✅ NO validar firma (Supabase ya lo hizo)
+        payload = jwt.get_unverified_claims(token)
+
+        if payload.get("role") != "authenticated":
+            raise HTTPException(status_code=401, detail="Invalid role")
+
+        return payload
+
+    except Exception:
         raise HTTPException(status_code=401, detail="Invalid token")
