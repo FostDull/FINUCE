@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Numeric, ForeignKey
+from sqlalchemy import Column, String, Numeric, ForeignKey, DateTime
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
 from sqlalchemy.ext.declarative import declarative_base
@@ -13,3 +13,4 @@ class Account(Base):
     user_id = Column(UUID(as_uuid=True), nullable=False)
     balance = Column(Numeric, default=0)
     currency = Column(String)
+    created_at = Column(DateTime)

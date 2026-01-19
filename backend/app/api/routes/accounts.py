@@ -1,4 +1,7 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+from app.core.database import get_db
+from app.models.account import Account
 
 router = APIRouter(
     prefix="/accounts",
@@ -7,5 +10,6 @@ router = APIRouter(
 
 
 @router.get("/")
-def list_accounts():
-    return {"message": "Accounts endpoint OK"}
+def get_accounts(db: Session = Depends(get_db)):
+    accounts = db.query(Account).all()
+    return accounts
