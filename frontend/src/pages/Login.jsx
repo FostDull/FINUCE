@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "/Users/FostDull/Documents/Universidadt/PW/FIN-UCE-main/FIN-UCE-main/src/lib/supabase";
+import { supabase } from "../lib/supabase";
 
 import AuthLayout from "../layouts/AuthLayout";
 

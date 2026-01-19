@@ -3,3 +3,6 @@ uvicorn
 python-dotenv
 python-jose
 httpx
+requests
+sqlalchemy
+psycopg2-binary
