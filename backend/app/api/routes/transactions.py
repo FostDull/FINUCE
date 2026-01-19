@@ -1,42 +1,56 @@
+from backend.app.deps.auth import get_current_user
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.deps.db import get_db
+
+from app.core.database import get_db
 from app.models.account import Account
 from app.models.transaction import Transaction
+from app.schemas.transaction import TransactionCreate, TransactionResponse
 
-router = APIRouter(prefix="/transactions", tags=["Transactions"])
+router = APIRouter(
+    prefix="/api/transactions",
+    tags=["Transactions"]
+)
 
 
-@router.get("/")
-def list_transactions():
-    return {"message": "Transactions endpoint working"}
+@router.get("/", response_model=list[TransactionResponse])
+def list_transactions(db: Session = Depends(get_db)):
+    return db.query(Transaction).all()
 
 
-@router.post("/")
+@router.post("/", response_model=TransactionResponse)
 def create_transaction(
-    account_id: str,
-    amount: float,
-    tx_type: str,
+    data: TransactionCreate,
+    user=Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    account = db.query(Account).filter(Account.id == account_id).first()
+    account = db.query(Account).filter(
+        Account.id == data.account_id
+        Account.user_id == user["sub"]
+    ).first()
+
     if not account:
-        raise HTTPException(404, "Account not found")
+        raise HTTPException(status_code=404, detail="Account not found")
 
-    if tx_type == "debit" and account.balance < amount:
-        raise HTTPException(400, "Insufficient funds")
+    if data.type == "debit" and account.balance < data.amount:
+        raise HTTPException(status_code=400, detail="Insufficient funds")
 
-    if tx_type == "credit":
-        account.balance += amount
+    # 💰 Update balance
+    if data.type == "credit":
+        account.balance += data.amount
+    elif data.type == "debit":
+        account.balance -= data.amount
     else:
-        account.balance -= amount
+        raise HTTPException(status_code=400, detail="Invalid transaction type")
 
-    tx = Transaction(
+    transaction = Transaction(
         account_id=account.id,
-        type=tx_type,
-        amount=amount
+        type=data.type,
+        amount=data.amount
     )
 
-    db.add(tx)
+    db.add(transaction)
     db.commit()
-    return {"status": "ok"}
+    db.refresh(transaction)
+
+    return transaction
