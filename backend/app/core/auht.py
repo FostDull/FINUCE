@@ -5,6 +5,9 @@ from jose import jwt
 SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
 SUPABASE_AUDIENCE = "authenticated"
 
+if not SUPABASE_JWT_SECRET:
+    raise RuntimeError("SUPABASE_JWT_SECRET no está definido")
+
 
 def get_current_user(authorization: str = Header(...)):
     if not authorization.startswith("Bearer "):
