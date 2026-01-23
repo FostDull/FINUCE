@@ -1,10 +1,5 @@
 fastapi
 uvicorn
-python-dotenv
-httpx
-requests
 sqlalchemy
 psycopg2-binary
-PyJWT
-supabase
-python-jose[cryptography]
+python-dotenv

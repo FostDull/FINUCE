@@ -9,11 +9,8 @@ class TransactionCreate(BaseModel):
     amount: float
 
 
-class TransactionResponse(BaseModel):
+class TransactionResponse(TransactionCreate):
     id: UUID
-    account_id: UUID
-    type: str
-    amount: float
     created_at: datetime
 
     class Config:

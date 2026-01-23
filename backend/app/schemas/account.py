@@ -1,15 +1,14 @@
 from pydantic import BaseModel
-from typing import Optional
+from uuid import UUID
 
 
 class AccountCreate(BaseModel):
-    user_id: str
-    account_number: str
-    balance: float = 0.0
+    name: str
 
 
 class AccountResponse(AccountCreate):
-    id: int
+    id: UUID
+    balance: float
 
     class Config:
         from_attributes = True
