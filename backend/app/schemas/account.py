@@ -1,14 +1,14 @@
 from pydantic import BaseModel
 from uuid import UUID
+from decimal import Decimal
+from datetime import datetime
 
 
-class AccountCreate(BaseModel):
-    name: str
-
-
-class AccountResponse(AccountCreate):
+class AccountResponse(BaseModel):
     id: UUID
-    balance: float
+    user_id: UUID
+    balance: Decimal
+    created_at: datetime
 
     class Config:
         from_attributes = True
