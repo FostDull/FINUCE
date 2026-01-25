@@ -1,3 +1,5 @@
+from fastapi import BackgroundTasks
+from app.tasks.payment_tasks import check_payments
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from uuid import UUID
@@ -85,3 +87,12 @@ def pay_payment(
     return {
         "client_secret": intent.client_secret
     }
+
+
+router = APIRouter()
+
+
+@router.post("/payments/check")
+def check_payment_status(background_tasks: BackgroundTasks):
+    background_tasks.add_task(check_payments)
+    return {"status": "checking payments"}

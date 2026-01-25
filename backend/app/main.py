@@ -1,3 +1,5 @@
+from app.core.redis import redis_client
+from app.core.mongo import mongo_db
 from fastapi import FastAPI
 import logging
 
@@ -43,3 +45,8 @@ def root():
 @app.get("/health", tags=["General"])
 def health():
     return {"status": "healthy"}
+
+
+print(mongo_db.list_collection_names())
+
+redis_client.ping()
