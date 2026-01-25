@@ -1,4 +1,4 @@
-from app.db.supabase import get_supabase_client
+from app.core.supabase import get_supabase_client
 from app.services.payment_watcher import process_payment_status
 
 

@@ -1,4 +1,5 @@
-from app.db.supabase import get_supabase_client
+from app.core.supabase import get_supabase_client
+
 from app.services.notifications_service import create_notification
 from app.services.notification_guard import already_notified, mark_as_notified
 
