@@ -49,6 +49,11 @@ def create_payment(
     return payment
 
 
+@router.get("/", response_model=list[PaymentResponse])
+def get_payments(db: Session = Depends(get_db), user=Depends(get_current_user)):
+    return db.query(Payment).all()  # O filtrar por usuario
+
+
 @router.post("/{payment_id}/pay")
 def pay_payment(
     payment_id: UUID,
@@ -87,9 +92,6 @@ def pay_payment(
     return {
         "client_secret": intent.client_secret
     }
-
-
-router = APIRouter()
 
 
 @router.post("/payments/check")
