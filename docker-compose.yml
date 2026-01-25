@@ -1,33 +1,36 @@
-version: "3.9"
-
 services:
-  api:
-    build: .
-    container_name: finuce_api
-    restart: always
+  backend:
+    build: ./backend
+    container_name: fin-backend
+    env_file:
+      - ./backend/.env
     ports:
       - "8000:8000"
+
+  frontend:
+    build: ./frontend
+    container_name: fin-frontend
     env_file:
-      - .env
+      - ./frontend/.env
+    ports:
+      - "5173:5173"
     depends_on:
-      - redis
-      - mongo
+      - backend
+
 
   redis:
     image: redis:7
-    container_name: finuce_redis
-    restart: always
+    container_name: fin-redis
     ports:
       - "6379:6379"
 
   mongo:
     image: mongo:6
-    container_name: finuce_mongo
-    restart: always
+    container_name: fin-mongo
     ports:
       - "27017:27017"
     volumes:
-      - mongo_data:/data/db
+      - mongo_data:/data/db    
 
 volumes:
   mongo_data:
