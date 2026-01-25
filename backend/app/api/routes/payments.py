@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from uuid import UUID
+from decimal import Decimal
 
 import stripe
 
@@ -9,6 +10,10 @@ from app.models.payment import Payment
 from app.models.account import Account
 from app.schemas.payment import PaymentCreate, PaymentResponse
 from app.core.auth import get_current_user
+from app.core.config import STRIPE_SECRET_KEY
+
+# 🔑 Configurar Stripe
+stripe.api_key = STRIPE_SECRET_KEY
 
 router = APIRouter(prefix="/payments", tags=["Payments"])
 
@@ -23,9 +28,16 @@ def create_payment(
         Account.user_id == user["sub"]
     ).first()
 
+    if not account:
+        raise HTTPException(
+            status_code=404,
+            detail="Account not found for this user"
+        )
+
     payment = Payment(
         account_id=account.id,
-        amount=data.amount
+        amount=data.amount,
+        status="pending"
     )
 
     db.add(payment)
@@ -43,11 +55,23 @@ def pay_payment(
 ):
     payment = db.query(Payment).get(payment_id)
 
+    if not payment:
+        raise HTTPException(404, "Payment not found")
+
+    # 🔒 Verificar que el pago pertenezca al usuario
+    account = db.query(Account).filter(
+        Account.id == payment.account_id,
+        Account.user_id == user["sub"]
+    ).first()
+
+    if not account:
+        raise HTTPException(403, "Not authorized to pay this payment")
+
     if payment.status != "pending":
         raise HTTPException(400, "Payment not available")
 
     intent = stripe.PaymentIntent.create(
-        amount=int(payment.amount * 100),
+        amount=int(payment.amount * 100),  # Stripe usa centavos
         currency="usd",
         metadata={
             "payment_id": str(payment.id)
@@ -58,4 +82,6 @@ def pay_payment(
     payment.status = "processing"
     db.commit()
 
-    return {"client_secret": intent.client_secret}
+    return {
+        "client_secret": intent.client_secret
+    }

@@ -6,9 +6,12 @@ from app.core.database import get_db
 from app.models.payment import Payment
 from app.models.transaction import Transaction
 from app.models.account import Account
-from app.core.config import STRIPE_WEBHOOK_SECRET
+from app.core.config import STRIPE_WEBHOOK_SECRET, STRIPE_SECRET_KEY
 
 router = APIRouter()
+
+# 🔑 Stripe config
+stripe.api_key = STRIPE_SECRET_KEY
 
 
 @router.post("/webhooks/stripe")
@@ -27,35 +30,53 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid payload")
 
-    if event["type"] == "payment_intent.succeeded":
-        intent = event["data"]["object"]
-        payment_id = intent["metadata"].get("payment_id")
+    if event["type"] != "payment_intent.succeeded":
+        return {"ok": True}
 
-        if not payment_id:
-            return {"ok": True}
+    intent = event["data"]["object"]
+    payment_id = intent["metadata"].get("payment_id")
 
-        payment = db.get(Payment, payment_id)
+    if not payment_id:
+        return {"ok": True}
 
-        if not payment or payment.status == "paid":
-            return {"ok": True}
+    # 🔒 Lock row to prevent double execution
+    payment = (
+        db.query(Payment)
+        .filter(Payment.id == payment_id)
+        .with_for_update()
+        .first()
+    )
 
-        try:
-            payment.status = "paid"
+    if not payment or payment.status == "paid":
+        return {"ok": True}
 
-            account = db.get(Account, payment.account_id)
-            account.balance += payment.amount
+    # 🧠 Verificar intent correcto
+    if payment.stripe_payment_intent_id != intent["id"]:
+        raise HTTPException(400, "PaymentIntent mismatch")
 
-            tx = Transaction(
-                account_id=payment.account_id,
-                amount=payment.amount,
-                type="income"
-            )
+    try:
+        payment.status = "paid"
 
-            db.add(tx)
-            db.commit()
+        account = (
+            db.query(Account)
+            .filter(Account.id == payment.account_id)
+            .with_for_update()
+            .first()
+        )
 
-        except Exception:
-            db.rollback()
-            raise
+        account.balance += payment.amount
+
+        tx = Transaction(
+            account_id=payment.account_id,
+            amount=payment.amount,
+            type="income"
+        )
+
+        db.add(tx)
+        db.commit()
+
+    except Exception as e:
+        db.rollback()
+        raise e
 
     return {"ok": True}
