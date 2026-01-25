@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, Depends
+from fastapi import APIRouter, Request, Depends, HTTPException
 from sqlalchemy.orm import Session
 import stripe
 
@@ -16,22 +16,33 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
     payload = await request.body()
     sig_header = request.headers.get("stripe-signature")
 
-    event = stripe.Webhook.construct_event(
-        payload,
-        sig_header,
-        STRIPE_WEBHOOK_SECRET
-    )
+    try:
+        event = stripe.Webhook.construct_event(
+            payload,
+            sig_header,
+            STRIPE_WEBHOOK_SECRET
+        )
+    except stripe.error.SignatureVerificationError:
+        raise HTTPException(status_code=400, detail="Invalid signature")
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid payload")
 
     if event["type"] == "payment_intent.succeeded":
         intent = event["data"]["object"]
-        payment_id = intent["metadata"]["payment_id"]
+        payment_id = intent["metadata"].get("payment_id")
 
-        payment = db.query(Payment).get(payment_id)
+        if not payment_id:
+            return {"ok": True}
 
-        if payment and payment.status != "paid":
+        payment = db.get(Payment, payment_id)
+
+        if not payment or payment.status == "paid":
+            return {"ok": True}
+
+        try:
             payment.status = "paid"
 
-            account = db.query(Account).get(payment.account_id)
+            account = db.get(Account, payment.account_id)
             account.balance += payment.amount
 
             tx = Transaction(
@@ -42,5 +53,9 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
 
             db.add(tx)
             db.commit()
+
+        except Exception:
+            db.rollback()
+            raise
 
     return {"ok": True}

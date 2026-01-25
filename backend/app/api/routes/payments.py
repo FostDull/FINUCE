@@ -33,3 +33,29 @@ def create_payment(
     db.refresh(payment)
 
     return payment
+
+
+@router.post("/{payment_id}/pay")
+def pay_payment(
+    payment_id: UUID,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    payment = db.query(Payment).get(payment_id)
+
+    if payment.status != "pending":
+        raise HTTPException(400, "Payment not available")
+
+    intent = stripe.PaymentIntent.create(
+        amount=int(payment.amount * 100),
+        currency="usd",
+        metadata={
+            "payment_id": str(payment.id)
+        }
+    )
+
+    payment.stripe_payment_intent_id = intent.id
+    payment.status = "processing"
+    db.commit()
+
+    return {"client_secret": intent.client_secret}

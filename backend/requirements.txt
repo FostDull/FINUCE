@@ -2,5 +2,9 @@ fastapi
 uvicorn
 sqlalchemy
 psycopg2-binary
-python-jose
 python-dotenv
+pydantic
+stripe
+supabase
+redis
+pymongo

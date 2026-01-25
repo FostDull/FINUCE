@@ -2,7 +2,8 @@ from fastapi import FastAPI
 import logging
 
 from app.core.database import Base, engine
-from app.api.routes import accounts, transactions
+from app.api.routes import accounts, transactions, payments, webhooks
+
 
 # Configuración de logs para ver errores en consola fácilmente
 logging.basicConfig(level=logging.INFO)
@@ -31,6 +32,8 @@ create_tables()
 # Ahora tus rutas serán /accounts/ y /transactions/
 app.include_router(accounts.router)
 app.include_router(transactions.router)
+app.include_router(payments.router)
+app.include_router(webhooks.router)
 
 
 @app.get("/", tags=["General"])
