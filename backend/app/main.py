@@ -4,7 +4,7 @@ from fastapi import FastAPI
 import logging
 
 from app.core.database import Base, engine
-from app.api.routes import accounts, transactions, payments, webhooks
+from app.api.routes import accounts, transactions, payments, webhooks, notifications
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -31,6 +31,7 @@ app.include_router(accounts.router)
 app.include_router(transactions.router)
 app.include_router(payments.router)
 app.include_router(webhooks.router)
+app.include_router(notifications.router)
 
 
 @app.get("/", tags=["General"])
