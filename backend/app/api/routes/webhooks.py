@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Request, Depends, HTTPException
+from fastapi import APIRouter, Request, Depends
 from sqlalchemy.orm import Session
 import stripe
-
 from uuid import UUID
+
 from app.core.database import get_db
 from app.models.payment import Payment
 from app.models.transaction import Transaction
@@ -24,12 +24,10 @@ async def stripe_webhook(
     sig_header = request.headers.get("stripe-signature")
 
     if not sig_header:
-        raise HTTPException(status_code=400, detail="Missing Stripe signature")
+        # Stripe necesita 2xx para no reintentar
+        return {"received": False}
 
-    # 🔐 Definir event como None inicialmente para evitar NameError
-    event = None
-
-    # 🔐 Verificar firma
+    # 🔐 Verificación de firma
     try:
         event = stripe.Webhook.construct_event(
             payload=payload,
@@ -37,38 +35,36 @@ async def stripe_webhook(
             secret=STRIPE_WEBHOOK_SECRET,
         )
     except stripe.error.SignatureVerificationError as e:
-        print(f"❌ Error de firma: {str(e)}")
-        raise HTTPException(status_code=400, detail="Invalid signature")
+        print(f"❌ Firma inválida: {str(e)}")
+        return {"received": False}
     except ValueError as e:
         print(f"❌ Payload inválido: {str(e)}")
-        raise HTTPException(status_code=400, detail="Invalid payload")
+        return {"received": False}
     except Exception as e:
-        print(f"❌ Error inesperado verificando webhook: {str(e)}")
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+        print(f"❌ Error verificando webhook: {str(e)}")
+        return {"received": False}
 
-    # 🛑 Si por alguna razón event sigue siendo None, salir
-    if not event:
-        return {"received": False, "error": "Event not constructed"}
-
-    # ⚠️ Ahora sí puedes usar event["type"] con seguridad
+    # 🎯 Solo procesamos pagos exitosos
     if event["type"] != "payment_intent.succeeded":
         return {"received": True}
 
     intent = event["data"]["object"]
 
-    # 📝 DEBUG: Esto es vital para ver qué envía Stripe en la terminal de Docker
     print(
-        f"DEBUG: Procesando intent {intent['id']} con metadata: {intent.get('metadata')}")
+        f"DEBUG: Intent {intent['id']} metadata: {intent.get('metadata')}"
+    )
 
     payment_id_str = intent.get("metadata", {}).get("payment_id")
 
     if not payment_id_str:
-        print("DEBUG: Webhook ignorado - No hay payment_id en metadata")
+        print("DEBUG: Sin payment_id en metadata")
         return {"received": True}
 
     try:
-        # 1. Convertir y buscar el pago con bloqueo de fila
+        # 1️⃣ Convertir UUID
         payment_id = UUID(payment_id_str)
+
+        # 2️⃣ Lock del pago
         payment = (
             db.query(Payment)
             .filter(Payment.id == payment_id)
@@ -77,21 +73,19 @@ async def stripe_webhook(
         )
 
         if not payment:
-            print(f"DEBUG: Pago {payment_id} no encontrado en DB")
+            print(f"DEBUG: Pago {payment_id} no existe")
             return {"received": True}
 
+        # Idempotencia
         if payment.status == "paid":
             return {"received": True}
 
-        # 2. Verificación cruzada de seguridad
+        # 3️⃣ Verificación cruzada Stripe
         if payment.stripe_payment_intent_id != intent["id"]:
-            print("DEBUG: Mismatch de PaymentIntent ID")
-            raise HTTPException(
-                status_code=400, detail="PaymentIntent mismatch")
+            print("❌ PaymentIntent mismatch")
+            return {"received": True}
 
-        # 3. Actualización atómica de Balance y Transacción
-        payment.status = "paid"
-
+        # 4️⃣ Lock cuenta
         account = (
             db.query(Account)
             .filter(Account.id == payment.account_id)
@@ -100,26 +94,32 @@ async def stripe_webhook(
         )
 
         if not account:
-            raise RuntimeError("Account not found")
+            print("❌ Account no encontrada")
+            return {"received": True}
 
-        # Actualizar saldo
+        # 5️⃣ Actualización atómica
+        payment.status = "paid"
         account.balance += payment.amount
 
-        # Registrar historial
         transaction = Transaction(
             account_id=account.id,
             amount=payment.amount,
             type="income",
-            reference=f"Stripe: {intent['id']}",
+            reference=f"stripe:{intent['id']}",
         )
 
         db.add(transaction)
         db.commit()
-        print(f"✅ ¡ÉXITO! Saldo actualizado para cuenta {account.id}")
+
+        print(f"✅ Pago confirmado | Cuenta {account.id} | +{payment.amount}")
+
+    except ValueError:
+        print(f"❌ UUID inválido: {payment_id_str}")
+        return {"received": True}
 
     except Exception as e:
         db.rollback()
-        print(f"❌ ERROR en Webhook: {str(e)}")
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+        print(f"❌ ERROR DB webhook: {str(e)}")
+        return {"received": False}
 
     return {"received": True}
