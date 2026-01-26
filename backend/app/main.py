@@ -28,10 +28,10 @@ def startup_event():
 
 # Rutas
 app.include_router(accounts.router)
-app.include_router(transactions.router)
-app.include_router(payments.router)
-app.include_router(webhooks.router)
-app.include_router(notifications.router)
+# app.include_router(transactions.router)
+# app.include_router(payments.router)
+# app.include_router(webhooks.router)
+# app.include_router(notifications.router)
 
 
 @app.get("/", tags=["General"])

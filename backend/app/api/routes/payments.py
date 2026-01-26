@@ -27,7 +27,7 @@ def create_payment(
     db: Session = Depends(get_db),
 ):
     account = db.query(Account).filter(
-        Account.user_id == user["sub"]
+        Account.user_id == str(user["sub"])
     ).first()
 
     if not account:
@@ -51,7 +51,9 @@ def create_payment(
 
 @router.get("/", response_model=list[PaymentResponse])
 def get_payments(db: Session = Depends(get_db), user=Depends(get_current_user)):
-    return db.query(Payment).all()  # O filtrar por usuario
+    return db.query(Payment).join(Account).filter(
+        Account.user_id == str(user["sub"])
+    ).all()
 
 
 @router.post("/{payment_id}/pay")
@@ -68,7 +70,7 @@ def pay_payment(
     # 🔒 Verificar que el pago pertenezca al usuario
     account = db.query(Account).filter(
         Account.id == payment.account_id,
-        Account.user_id == user["sub"]
+        Account.user_id == str(user["sub"])
     ).first()
 
     if not account:
@@ -94,7 +96,7 @@ def pay_payment(
     }
 
 
-@router.post("/payments/check")
+@router.post("/check")
 def check_payment_status(background_tasks: BackgroundTasks):
     background_tasks.add_task(check_payments)
     return {"status": "checking payments"}
