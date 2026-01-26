@@ -23,8 +23,34 @@ async def stripe_webhook(
     payload = await request.body()
     sig_header = request.headers.get("stripe-signature")
 
-    # ... (Bloque de validación de firma igual) ...
+    if not sig_header:
+        raise HTTPException(status_code=400, detail="Missing Stripe signature")
 
+    # 🔐 Definir event como None inicialmente para evitar NameError
+    event = None
+
+    # 🔐 Verificar firma
+    try:
+        event = stripe.Webhook.construct_event(
+            payload=payload,
+            sig_header=sig_header,
+            secret=STRIPE_WEBHOOK_SECRET,
+        )
+    except stripe.error.SignatureVerificationError as e:
+        print(f"❌ Error de firma: {str(e)}")
+        raise HTTPException(status_code=400, detail="Invalid signature")
+    except ValueError as e:
+        print(f"❌ Payload inválido: {str(e)}")
+        raise HTTPException(status_code=400, detail="Invalid payload")
+    except Exception as e:
+        print(f"❌ Error inesperado verificando webhook: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+    # 🛑 Si por alguna razón event sigue siendo None, salir
+    if not event:
+        return {"received": False, "error": "Event not constructed"}
+
+    # ⚠️ Ahora sí puedes usar event["type"] con seguridad
     if event["type"] != "payment_intent.succeeded":
         return {"received": True}
 
