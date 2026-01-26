@@ -1,6 +1,4 @@
-import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
-import { useState } from "react";
-import { createPayment, payPayment } from "../../services/paymentService";
+import { useStripe, useElements, CardElement } from "@stripe/react-stripe-js";
 
 export default function PaymentMethod() {
   const stripe = useStripe();
