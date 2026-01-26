@@ -5,9 +5,8 @@ export default function PrivateRoute() {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return null; // o Spinner
+    return <div>Cargando...</div>;
   }
-
   if (!user) {
     return <Navigate to="/" replace />;
   }

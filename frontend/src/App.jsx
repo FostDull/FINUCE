@@ -8,7 +8,7 @@ import PrivateRoute from "./routes/PrivateRoute";
 import DashboardHome from "./pages/dashboard/DashboardHome";
 import SendMoney from "./pages/dashboard/SendMoney";
 import Transactions from "./pages/dashboard/Transactions";
-import PaymentMethods from "./pages/dashboard/PaymentMethods";
+import PaymentMethod from "./pages/dashboard/PaymentMethod";
 import Configuration from "./pages/dashboard/Configuration";
 
 export default function App() {
@@ -24,7 +24,7 @@ export default function App() {
           <Route index element={<DashboardHome />} />
           <Route path="send" element={<SendMoney />} />
           <Route path="transactions" element={<Transactions />} />
-          <Route path="payments" element={<PaymentMethods />} />
+          <Route path="payments" element={<PaymentMethod />} />
           <Route path="config" element={<Configuration />} />
         </Route>
       </Route>

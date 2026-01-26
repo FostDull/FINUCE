@@ -1,32 +1,46 @@
-import { Elements } from "@stripe/react-stripe-js";
-import { stripePromise } from "../../lib/stripe";
-import StripePaymentForm from "../../components/StripePaymentForm";
-import api from "../../services/api";
+import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { useState } from "react";
+import { createPayment, payPayment } from "../../services/paymentService";
 
 export default function PaymentMethod() {
-  const [paymentId, setPaymentId] = useState(null);
+  const stripe = useStripe();
+  const elements = useElements();
+  const [loading, setLoading] = useState(false);
 
-  const createPayment = async () => {
-    const { data } = await api.post("/payments", {
-      amount: 1000, // centavos
-      currency: "usd",
+  const handlePay = async () => {
+    setLoading(true);
+
+    // 1️⃣ Crear payment en tu backend
+    const { data: payment } = await createPayment(20);
+
+    // 2️⃣ Crear intent y obtener client_secret
+    const { data } = await payPayment(payment.id);
+
+    // 3️⃣ Confirmar con Stripe
+    const result = await stripe.confirmCardPayment(data.client_secret, {
+      payment_method: {
+        card: elements.getElement(CardElement),
+      },
     });
 
-    setPaymentId(data.id);
+    if (result.error) {
+      alert(result.error.message);
+    } else {
+      alert("✅ Pago completado");
+    }
+
+    setLoading(false);
   };
 
   return (
     <div>
       <h2>Agregar fondos</h2>
 
-      {!paymentId && <button onClick={createPayment}>Crear pago</button>}
+      <CardElement />
 
-      {paymentId && (
-        <Elements stripe={stripePromise}>
-          <StripePaymentForm paymentId={paymentId} />
-        </Elements>
-      )}
+      <button onClick={handlePay} disabled={!stripe || loading}>
+        {loading ? "Procesando..." : "Pagar $20"}
+      </button>
     </div>
   );
 }
