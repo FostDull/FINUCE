@@ -51,10 +51,10 @@ export default function Sidebar() {
           FIN-UCE
         </Typography>
 
-        {navButton("Dashboard", "/dashboard")}
+        {navButton("Home", "/dashboard")}
         {navButton("Send Money", "/dashboard/send")}
         {navButton("Transactions", "/dashboard/transactions")}
-        {navButton("Payment Methods", "/dashboard/payments")}
+        {navButton("Payment Method", "/dashboard/payments")}
       </Box>
 
       {/* BOTTOM */}
