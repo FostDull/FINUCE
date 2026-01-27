@@ -1,3 +1,4 @@
+from fastapi.middleware.cors import CORSMiddleware
 from app.core.redis import redis_client
 from app.core.mongo import mongo_db
 from fastapi import FastAPI
@@ -15,13 +16,15 @@ app = FastAPI(
     description="Backend bancario con FastAPI, Supabase y Stripe"
 )
 
-from fastapi.middleware.cors import CORSMiddleware
+
+origins = [
+    "http://localhost:5173",  # Tu frontend en desarrollo
+    "http://127.0.0.1:5173",
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-    ],
+    allow_origins=["http://localhost:5173"],  # El puerto de tu Vite
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

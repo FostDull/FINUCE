@@ -7,8 +7,38 @@ import {
   useElements,
 } from "@stripe/react-stripe-js";
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+import { supabase } from "../../lib/supabase";
 
+// 🔑 Stripe (SOLO publishable key)
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+
+console.log("Stripe key:", import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+
+// 🔥 Crear PaymentIntent (auth Supabase)
+const createIntent = async () => {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session) throw new Error("No session");
+
+  const res = await fetch("http://localhost:8000/payments/create-intent", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${session.access_token}`,
+    },
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(err);
+  }
+
+  return res.json(); // { client_secret }
+};
+
+// ==================== FORM ====================
 function CheckoutForm() {
   const stripe = useStripe();
   const elements = useElements();
@@ -16,6 +46,7 @@ function CheckoutForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!stripe || !elements) return;
 
     setLoading(true);
@@ -44,19 +75,22 @@ function CheckoutForm() {
   );
 }
 
+// ==================== PAGE ====================
 export default function PaymentMethod() {
   const [clientSecret, setClientSecret] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch("http://localhost:8000/payments/create-intent", {
-      method: "POST",
-      credentials: "include",
-    })
-      .then((r) => r.json())
-      .then((data) => setClientSecret(data.client_secret));
+    createIntent()
+      .then((data) => setClientSecret(data.client_secret))
+      .catch((err) => {
+        console.error(err);
+        setError("Error iniciando el pago");
+      });
   }, []);
 
-  if (!clientSecret) return null;
+  if (error) return <p>{error}</p>;
+  if (!clientSecret) return <p>Cargando pago...</p>;
 
   return (
     <Elements stripe={stripePromise} options={{ clientSecret }}>

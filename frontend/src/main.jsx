@@ -8,8 +8,12 @@ import { loadStripe } from "@stripe/stripe-js";
 import App from "./App";
 import { AuthProvider } from "./context/AuthContext";
 
-// 🔑 Stripe publishable key
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+const STRIPE_KEY =
+  import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ||
+  "pk_test_PON_AQUI_TU_CLAVE_DIRECTAMENTE";
+const stripePromise = loadStripe(STRIPE_KEY);
+
+console.log("Cargando Stripe con:", STRIPE_KEY);
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
