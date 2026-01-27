@@ -1,43 +1,66 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { loadStripe } from "@stripe/stripe-js";
-import { Elements } from "@stripe/react-stripe-js";
+import {
+  Elements,
+  PaymentElement,
+  useStripe,
+  useElements,
+} from "@stripe/react-stripe-js";
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
-export default function PaymentMethod() {
+function CheckoutForm() {
+  const stripe = useStripe();
+  const elements = useElements();
   const [loading, setLoading] = useState(false);
 
-  const createPayment = async () => {
-    const res = await fetch("http://localhost:8000/payments/create-intent", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!stripe || !elements) return;
+
+    setLoading(true);
+
+    const { error } = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        return_url: "http://localhost:5173/dashboard",
       },
-      credentials: "include", // importante si usas auth/cookies
     });
 
-    if (!res.ok) {
-      throw new Error("Error creating payment");
+    if (error) {
+      console.error(error.message);
     }
 
-    return res.json(); // { client_secret }
-  };
-
-  const handlePay = async () => {
-    setLoading(true);
-    try {
-      const data = await createPayment();
-      console.log("client_secret:", data.client_secret);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
+    setLoading(false);
   };
 
   return (
-    <button onClick={handlePay} disabled={loading}>
-      Pagar
-    </button>
+    <form onSubmit={handleSubmit}>
+      <PaymentElement />
+      <button disabled={!stripe || loading}>
+        {loading ? "Procesando..." : "Pagar"}
+      </button>
+    </form>
+  );
+}
+
+export default function PaymentMethod() {
+  const [clientSecret, setClientSecret] = useState(null);
+
+  useEffect(() => {
+    fetch("http://localhost:8000/payments/create-intent", {
+      method: "POST",
+      credentials: "include",
+    })
+      .then((r) => r.json())
+      .then((data) => setClientSecret(data.client_secret));
+  }, []);
+
+  if (!clientSecret) return null;
+
+  return (
+    <Elements stripe={stripePromise} options={{ clientSecret }}>
+      <CheckoutForm />
+    </Elements>
   );
 }

@@ -1,29 +1,24 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from uuid import UUID
-
 import stripe
 
 from app.core.database import get_db
 from app.models.payment import Payment
 from app.models.account import Account
-from app.schemas.payment import PaymentCreate, PaymentResponse
 from app.core.auth import get_current_user
 from app.core.config import STRIPE_SECRET_KEY
 
-# 🔑 Configurar Stripe
 stripe.api_key = STRIPE_SECRET_KEY
 
 router = APIRouter(prefix="/payments", tags=["Payments"])
 
 
-# 🟢 Crear pago (NO toca Stripe)
-@router.post("/", response_model=PaymentResponse)
-def create_payment(
-    data: PaymentCreate,
+@router.post("/create-intent")
+def create_payment_intent(
     user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    # 1️⃣ Buscar cuenta del usuario
     account = (
         db.query(Account)
         .filter(Account.user_id == str(user["sub"]))
@@ -31,79 +26,40 @@ def create_payment(
     )
 
     if not account:
-        raise HTTPException(
-            status_code=404,
-            detail="Account not found for this user",
-        )
+        raise HTTPException(404, "Account not found")
 
+    amount = 50.00  # ⚠️ luego lo haces dinámico
+
+    # 2️⃣ Crear pago en DB
     payment = Payment(
         account_id=account.id,
-        amount=data.amount,
-        status="pending",
+        amount=amount,
+        status="processing",
     )
 
     db.add(payment)
     db.commit()
     db.refresh(payment)
 
-    return payment
-
-
-# 🟢 Listar pagos del usuario
-@router.get("/", response_model=list[PaymentResponse])
-def get_payments(
-    user=Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    return (
-        db.query(Payment)
-        .join(Account)
-        .filter(Account.user_id == str(user["sub"]))
-        .all()
-    )
-
-
-# 🟢 Iniciar pago en Stripe
-@router.post("/{payment_id}/pay")
-def pay_payment(
-    payment_id: UUID,
-    user=Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    payment = db.query(Payment).filter(Payment.id == payment_id).first()
-
-    if not payment:
-        raise HTTPException(404, "Payment not found")
-
-    account = (
-        db.query(Account)
-        .filter(
-            Account.id == payment.account_id,
-            Account.user_id == str(user["sub"]),
-        )
-        .first()
-    )
-
-    if not account:
-        raise HTTPException(403, "Not authorized to pay this payment")
-
-    if payment.status != "pending":
-        raise HTTPException(400, "Payment is not available for payment")
-
-    # 🔥 Stripe PaymentIntent
+    # 3️⃣ Crear PaymentIntent en Stripe
     intent = stripe.PaymentIntent.create(
-        amount=int(payment.amount * 100),  # centavos
+        amount=int(amount * 100),  # centavos
         currency="usd",
+        automatic_payment_methods={
+            "enabled": True
+        },
         metadata={
             "payment_id": str(payment.id),
             "account_id": str(account.id),
         },
     )
 
+    # 4️⃣ Guardar intent ID
     payment.stripe_payment_intent_id = intent.id
-    payment.status = "processing"
     db.commit()
 
+    # 5️⃣ Enviar client_secret a React
     return {
-        "client_secret": intent.client_secret
+        "client_secret": intent.client_secret,
+        "payment_id": payment.id,
     }
