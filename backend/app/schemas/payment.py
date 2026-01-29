@@ -1,16 +1,12 @@
-from pydantic import BaseModel
 from uuid import UUID
-from decimal import Decimal
+from pydantic import BaseModel
 from datetime import datetime
-
-
-class PaymentCreate(BaseModel):
-    amount: Decimal
 
 
 class PaymentResponse(BaseModel):
     id: UUID
-    amount: Decimal
+    amount: float
+    currency: str
     status: str
     created_at: datetime
 
