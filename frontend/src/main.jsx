@@ -8,17 +8,6 @@ import { loadStripe } from "@stripe/stripe-js";
 import App from "./App";
 import { AuthProvider } from "./context/AuthContext";
 
-from fastapi.middleware.cors import CORSMiddleware
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-
 const STRIPE_KEY =
   import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ||
   "pk_test_PON_AQUI_TU_CLAVE_DIRECTAMENTE";

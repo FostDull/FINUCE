@@ -19,7 +19,6 @@ def create_payment_intent(
     user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    # 1️⃣ Buscar cuenta
     account = (
         db.query(Account)
         .filter(Account.user_id == str(user["sub"]))
@@ -29,37 +28,26 @@ def create_payment_intent(
     if not account:
         raise HTTPException(404, "Account not found")
 
-    # 2️⃣ Crear registro de pago
     payment = Payment(
         account_id=account.id,
-        amount=10.00,  # 🔥 monto fijo de prueba (USD)
-        currency="usd",
-        status="processing",
+        amount=50,  # ejemplo fijo
+        status="pending",
     )
-
     db.add(payment)
     db.commit()
     db.refresh(payment)
 
-    # 3️⃣ Crear PaymentIntent en Stripe
     intent = stripe.PaymentIntent.create(
-        amount=int(payment.amount * 100),  # centavos
-        currency=payment.currency,
-        automatic_payment_methods={"enabled": True},
-        metadata={
-            "payment_id": str(payment.id),
-            "account_id": str(account.id),
-        },
+        amount=int(payment.amount * 100),
+        currency="usd",
+        metadata={"payment_id": str(payment.id)},
     )
 
-    # 4️⃣ Guardar ID de Stripe
     payment.stripe_payment_intent_id = intent.id
+    payment.status = "processing"
     db.commit()
 
-    return {
-        "client_secret": intent.client_secret,
-        "payment_id": payment.id,
-    }
+    return {"client_secret": intent.client_secret}
 
 
 @router.get("/", response_model=list[PaymentResponse])
