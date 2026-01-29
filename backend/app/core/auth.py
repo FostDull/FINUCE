@@ -1,40 +1,31 @@
-from fastapi import Header, HTTPException
-from jose import jwt
-from jose.utils import base64url_decode
-from jose.backends.rsa_backend import RSAKey
 import requests
-from functools import lru_cache
+from jose import jwt
+from jose.exceptions import JWTError
+from fastapi import HTTPException, Header
 
-SUPABASE_URL = "https://yoeskxgikvspffmmkhds.supabase.co"
-ALGORITHMS = ["RS256"]
+SUPABASE_URL = "https://yoeskxgikvspfmmkhds.supabase.co"
+JWKS_URL = f"{SUPABASE_URL}/auth/v1/keys"
 AUDIENCE = "authenticated"
 ISSUER = f"{SUPABASE_URL}/auth/v1"
 
+_jwks_cache = None
 
-@lru_cache()
+
 def get_jwks():
-    res = requests.get(f"{SUPABASE_URL}/auth/v1/keys")
-    res.raise_for_status()
-    return res.json()
-
-
-def build_rsa_key(jwk: dict):
-    return RSAKey(
-        {
-            "kty": jwk["kty"],
-            "kid": jwk["kid"],
-            "use": jwk["use"],
-            "n": jwk["n"],
-            "e": jwk["e"],
-        },
-        algorithm="RS256",
-    )
+    global _jwks_cache
+    if _jwks_cache is None:
+        try:
+            _jwks_cache = requests.get(JWKS_URL, timeout=5).json()
+        except Exception as e:
+            print("JWKS FETCH ERROR:", e)
+            raise HTTPException(
+                status_code=503, detail="Auth service unavailable")
+    return _jwks_cache
 
 
 def get_current_user(authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(
-            status_code=401, detail="Missing Authorization header")
+        raise HTTPException(status_code=401, detail="Missing token")
 
     token = authorization.replace("Bearer ", "")
 
@@ -43,19 +34,20 @@ def get_current_user(authorization: str = Header(None)):
         kid = header["kid"]
 
         jwks = get_jwks()
-        jwk = next(k for k in jwks["keys"] if k["kid"] == kid)
-
-        rsa_key = build_rsa_key(jwk)
+        key = next(k for k in jwks["keys"] if k["kid"] == kid)
 
         payload = jwt.decode(
             token,
-            rsa_key,
-            algorithms=ALGORITHMS,
+            key,
+            algorithms=["ES256"],
             audience=AUDIENCE,
             issuer=ISSUER,
         )
-
         return payload
 
-    except Exception as e:
-        raise HTTPException(status_code=401, detail=str(e))
+    except StopIteration:
+        raise HTTPException(status_code=401, detail="Invalid token key")
+
+    except JWTError as e:
+        print("JWT ERROR:", e)
+        raise HTTPException(status_code=401, detail="Invalid token")
