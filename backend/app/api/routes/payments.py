@@ -1,64 +1,51 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
 import stripe
+from fastapi import APIRouter, Depends, HTTPException
 
-from app.core.database import get_db
+from app.schemas.payment import (
+    PaymentIntentRequest,
+    PaymentIntentResponse
+)
 from app.core.auth import get_current_user
 from app.core.config import STRIPE_SECRET_KEY
-from app.models.account import Account
-from app.models.payment import Payment
-from app.schemas.payment import PaymentResponse
 
 stripe.api_key = STRIPE_SECRET_KEY
 
-router = APIRouter(prefix="/payments", tags=["Payments"])
+router = APIRouter(
+    prefix="/payments",
+    tags=["Payments"]
+)
 
 
-@router.post("/create-intent")
+@router.post(
+    "/create-intent",
+    response_model=PaymentIntentResponse
+)
 def create_payment_intent(
+    data: PaymentIntentRequest,
     user=Depends(get_current_user),
-    db: Session = Depends(get_db),
 ):
-    account = (
-        db.query(Account)
-        .filter(Account.user_id == str(user["sub"]))
-        .first()
-    )
+    """
+    Crea un PaymentIntent en Stripe.
+    Requiere JWT válido en Authorization header.
+    """
 
-    if not account:
-        raise HTTPException(404, "Account not found")
+    try:
+        intent = stripe.PaymentIntent.create(
+            amount=data.amount,
+            currency=data.currency,
+            description=data.description,
+            metadata={
+                "user_id": user.get("sub"),
+                "email": user.get("email"),
+            }
+        )
 
-    payment = Payment(
-        account_id=account.id,
-        amount=50,  # ejemplo fijo
-        status="pending",
-    )
-    db.add(payment)
-    db.commit()
-    db.refresh(payment)
+        return PaymentIntentResponse(
+            client_secret=intent.client_secret
+        )
 
-    intent = stripe.PaymentIntent.create(
-        amount=int(payment.amount * 100),
-        currency="usd",
-        metadata={"payment_id": str(payment.id)},
-    )
-
-    payment.stripe_payment_intent_id = intent.id
-    payment.status = "processing"
-    db.commit()
-
-    return {"client_secret": intent.client_secret}
-
-
-@router.get("/", response_model=list[PaymentResponse])
-def list_my_payments(
-    user=Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    return (
-        db.query(Payment)
-        .join(Account)
-        .filter(Account.user_id == str(user["sub"]))
-        .order_by(Payment.created_at.desc())
-        .all()
-    )
+    except stripe.error.StripeError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=str(e)
+        )

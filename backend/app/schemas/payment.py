@@ -1,14 +1,20 @@
-from uuid import UUID
-from pydantic import BaseModel
-from datetime import datetime
+from pydantic import BaseModel, Field
+from typing import Optional
 
 
-class PaymentResponse(BaseModel):
-    id: UUID
-    amount: float
-    currency: str
-    status: str
-    created_at: datetime
+class PaymentIntentRequest(BaseModel):
+    amount: int = Field(
+        ...,
+        gt=0,
+        description="Monto en centavos. Ej: 5000 = $50.00"
+    )
+    currency: str = Field(
+        default="usd",
+        min_length=3,
+        max_length=3
+    )
+    description: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+
+class PaymentIntentResponse(BaseModel):
+    client_secret: str

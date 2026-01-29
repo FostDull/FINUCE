@@ -1,7 +1,7 @@
 import requests
 from jose import jwt
 from jose.exceptions import JWTError
-from fastapi import HTTPException, Header
+from fastapi import Header, HTTPException
 
 SUPABASE_URL = "https://yoeskxgikvspfmmkhds.supabase.co"
 JWKS_URL = f"{SUPABASE_URL}/auth/v1/keys"
@@ -15,23 +15,29 @@ def get_jwks():
     global _jwks_cache
     if _jwks_cache is None:
         try:
-            _jwks_cache = requests.get(JWKS_URL, timeout=5).json()
-        except Exception as e:
-            print("JWKS FETCH ERROR:", e)
+            response = requests.get(JWKS_URL, timeout=5)
+            response.raise_for_status()
+            _jwks_cache = response.json()
+        except Exception:
             raise HTTPException(
-                status_code=503, detail="Auth service unavailable")
+                status_code=503,
+                detail="Auth service unavailable"
+            )
     return _jwks_cache
 
 
 def get_current_user(authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing token")
+        raise HTTPException(status_code=401, detail="Missing Authorization")
 
     token = authorization.replace("Bearer ", "")
 
     try:
         header = jwt.get_unverified_header(token)
-        kid = header["kid"]
+        kid = header.get("kid")
+
+        if not kid:
+            raise HTTPException(status_code=401, detail="Invalid token header")
 
         jwks = get_jwks()
         key = next(k for k in jwks["keys"] if k["kid"] == kid)
@@ -43,11 +49,11 @@ def get_current_user(authorization: str = Header(None)):
             audience=AUDIENCE,
             issuer=ISSUER,
         )
+
         return payload
 
     except StopIteration:
         raise HTTPException(status_code=401, detail="Invalid token key")
 
-    except JWTError as e:
-        print("JWT ERROR:", e)
+    except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
