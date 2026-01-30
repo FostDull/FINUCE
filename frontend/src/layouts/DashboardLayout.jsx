@@ -36,17 +36,6 @@ export default function DashboardLayout() {
             borderBottom: "1px solid #E0E3E7",
           }}
         >
-          {/* Page title placeholder */}
-          <Box
-            sx={{
-              fontSize: 18,
-              fontWeight: 600,
-              color: "#0A1F44",
-            }}
-          >
-            Dashboard
-          </Box>
-
           {/* User / notifications placeholder */}
           <Box
             sx={{

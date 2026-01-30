@@ -2,19 +2,16 @@ from fastapi import APIRouter, status
 from app.database.mongo import payments_collection
 
 router = APIRouter(
-    prefix="/transactions",
+    prefix="/payments/transactions",
     tags=["Transactions"]
 )
 
 
-@router.get(
-    "/",
-    status_code=status.HTTP_200_OK
-)
-async def list_transactions():
-    transactions = await payments_collection.find() \
-        .sort("created_at", -1) \
-        .to_list(100)
+@router.get("", status_code=status.HTTP_200_OK)
+def list_transactions():
+    transactions = list(
+        payments_collection.find().sort("created_at", -1).limit(100)
+    )
 
     for tx in transactions:
         tx["id"] = str(tx.pop("_id"))

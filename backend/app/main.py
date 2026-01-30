@@ -7,7 +7,7 @@ from app.core.mongo import mongo_db
 
 # ✅ IMPORTA SOLO LOS ROUTERS QUE FUNCIONAN
 from app.api.routes import accounts, payments
-# from app.api.routes import transactions
+from app.api.routes import transactions
 # from app.api.routes import webhooks
 from app.api.routes import notifications
 
@@ -59,6 +59,7 @@ def startup_checks():
 # Rutas activas
 app.include_router(accounts.router)
 app.include_router(payments.router)
+app.include_router(transactions.router)
 
 
 @app.get("/", tags=["General"])

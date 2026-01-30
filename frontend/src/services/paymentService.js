@@ -28,3 +28,17 @@ export async function createPayment(amount) {
 
   return res.json();
 }
+
+export async function getTransactions() {
+  if (!API_URL) {
+    throw new Error("VITE_API_URL no está definida");
+  }
+
+  const res = await fetch(`${API_URL}/payments/transactions`)
+
+  if (!res.ok) {
+    throw new Error("Error obteniendo transacciones");
+  }
+
+  return res.json();
+}
