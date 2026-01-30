@@ -26,8 +26,6 @@ services:
       - backend
     stdin_open: true
     tty: true
-    environment:
-      - VITE_STRIPE_PUBLISHABLE_KEY=${VITE_STRIPE_PUBLISHABLE_KEY}
     command: npm run dev
 
   redis:

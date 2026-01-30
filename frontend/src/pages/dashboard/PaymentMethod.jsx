@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
-import StripePaymentForm from "../../components/ui/StripePaymentForm";
 import { createPayment } from "../../services/paymentService";
+import StripePaymentForm from "../../components/ui/StripePaymentForm";
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 

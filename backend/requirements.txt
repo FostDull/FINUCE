@@ -6,7 +6,7 @@ python-dotenv
 pydantic
 stripe
 supabase
-redis
+redis>=4.5
 pymongo
 python-jose[cryptography]
 passlib[bcrypt]

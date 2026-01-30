@@ -21,11 +21,11 @@ app = FastAPI(
 )
 
 # CORS
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
-        "http://127.0.0.1:5173",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -37,17 +37,23 @@ app.add_middleware(
 
 @app.on_event("startup")
 def startup_checks():
-    try:
-        mongo_db.list_collection_names()
-        logger.info("Mongo conectado correctamente")
-    except Exception as e:
-        logger.warning(f"Mongo no disponible en startup: {e}")
+    logger.info("🔵 Iniciando checks de startup")
 
     try:
-        redis_client.ping()
-        logger.info("Redis conectado correctamente")
+        mongo_db.list_collection_names()
+        logger.info("🟢 Mongo conectado correctamente")
     except Exception as e:
-        logger.warning(f"Redis no disponible en startup: {e}")
+        logger.error(f"🔴 Error conectando a Mongo: {e}")
+
+    try:
+        if redis_client:
+            redis_client.ping()
+            logger.info("🟢 Redis conectado correctamente")
+
+    except Exception as e:
+        logger.warning(f"🔴 Redis no disponible: {e}")
+
+    logger.info("✅ Startup finalizado")
 
 
 # Rutas activas

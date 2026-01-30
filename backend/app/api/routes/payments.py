@@ -10,10 +10,6 @@ from app.core.config import STRIPE_SECRET_KEY
 
 logger = logging.getLogger(__name__)
 
-# 🔐 Validación temprana
-if not STRIPE_SECRET_KEY:
-    raise RuntimeError("STRIPE_SECRET_KEY no está configurada")
-
 stripe.api_key = STRIPE_SECRET_KEY
 
 router = APIRouter(
@@ -27,11 +23,14 @@ router = APIRouter(
     response_model=PaymentIntentResponse,
     status_code=status.HTTP_200_OK
 )
-def create_payment_intent(data: PaymentIntentRequest):
-    """
-    Crea un PaymentIntent en Stripe.
-    Autenticación deshabilitada en DEV.
-    """
+async def create_payment_intent(data: PaymentIntentRequest):
+
+    if not STRIPE_SECRET_KEY:
+        logger.critical("STRIPE_SECRET_KEY no configurada")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Stripe no configurado"
+        )
 
     try:
         intent = stripe.PaymentIntent.create(
@@ -48,14 +47,14 @@ def create_payment_intent(data: PaymentIntentRequest):
             client_secret=intent.client_secret
         )
 
-    except stripe.error.StripeError as e:
-        logger.error(f"Stripe error: {e}")
+    except stripe.error.StripeError:
+        logger.exception("Stripe error")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Error al crear PaymentIntent"
         )
 
-    except Exception as e:
+    except Exception:
         logger.exception("Error inesperado en create_payment_intent")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

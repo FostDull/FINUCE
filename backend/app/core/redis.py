@@ -1,12 +1,13 @@
 import os
 import redis
+import logging
+
+logger = logging.getLogger(__name__)
 
 REDIS_URL = os.getenv("REDIS_URL")
 
 if not REDIS_URL:
-    raise RuntimeError("REDIS_URL no está definido")
-
-redis_client = redis.from_url(
-    REDIS_URL,
-    decode_responses=True
-)
+    logger.warning("REDIS_URL no definido, Redis deshabilitado")
+    redis_client = None
+else:
+    redis_client = redis.Redis.from_url(REDIS_URL)

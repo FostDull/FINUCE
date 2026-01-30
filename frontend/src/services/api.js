@@ -1,8 +1,11 @@
 const API_URL = import.meta.env.VITE_API_URL;
 
-export async function createPayment(amount, token) {
-  // 🛑 Validación temprana para evitar 422
-  if (!amount || Number(amount) <= 0) {
+export async function createPayment(amount) {
+  if (!API_URL) {
+    throw new Error("VITE_API_URL no está definida");
+  }
+
+  if (!amount || amount <= 0) {
     throw new Error("Monto inválido");
   }
 
@@ -10,8 +13,6 @@ export async function createPayment(amount, token) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      // 🔓 Auth deshabilitada en DEV (se mantiene el header por compatibilidad)
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: JSON.stringify({
       amount: Number(amount),
@@ -20,14 +21,9 @@ export async function createPayment(amount, token) {
     }),
   });
 
-  // 🧠 Manejo explícito de errores HTTP
   if (!res.ok) {
-    let detail = "Error creando payment intent";
-    try {
-      const err = await res.json();
-      detail = err?.detail || detail;
-    } catch (_) {}
-    throw new Error(detail);
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.detail || "Error creando payment intent");
   }
 
   return res.json();
