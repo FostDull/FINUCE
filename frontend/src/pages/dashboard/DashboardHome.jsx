@@ -1,29 +1,75 @@
 import { useEffect, useState } from "react";
-import { getDashboardSummary } from "../../services/dashboardService";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+
+import {
+  getRevenueLast7Days,
+  getCompareTodayYesterday,
+} from "../../services/dashboardService";
 
 const DashboardHome = () => {
-  const [summary, setSummary] = useState(null);
+  const [chartData, setChartData] = useState([]);
+  const [compare, setCompare] = useState(null);
 
   useEffect(() => {
-    getDashboardSummary().then(setSummary);
+    getRevenueLast7Days().then((res) => setChartData(res.data));
+    getCompareTodayYesterday().then(setCompare);
   }, []);
-
-  if (!summary) return <p>Cargando...</p>;
 
   return (
     <>
-      <h2>Hoy</h2>
+      <h2>Dashboard</h2>
 
-      <div style={{ display: "flex", gap: "24px" }}>
-        <div>
-          <p>Volumen bruto</p>
-          <h3>${summary.today_volume.toFixed(2)} USD</h3>
-        </div>
+      {/* 🔹 Comparación */}
+      {compare && (
+        <div style={{ display: "flex", gap: 20, marginBottom: 30 }}>
+          <div>
+            <strong>Hoy</strong>
+            <div>${compare.today.toFixed(2)} USD</div>
+          </div>
 
-        <div>
-          <p>Pagos realizados</p>
-          <h3>{summary.today_count}</h3>
+          <div>
+            <strong>Ayer</strong>
+            <div>${compare.yesterday.toFixed(2)} USD</div>
+          </div>
+
+          <div>
+            <strong>Diferencia</strong>
+            <div
+              style={{
+                color: compare.difference >= 0 ? "green" : "red",
+              }}
+            >
+              {compare.difference >= 0 ? "+" : ""}$
+              {compare.difference.toFixed(2)} USD
+            </div>
+          </div>
         </div>
+      )}
+
+      {/* 🔹 Gráfica */}
+      <h3>Últimos 7 días</h3>
+
+      <div style={{ width: "100%", height: 300 }}>
+        <ResponsiveContainer>
+          <LineChart data={chartData}>
+            <XAxis dataKey="date" />
+            <YAxis />
+            <Tooltip formatter={(v) => `$${v} USD`} />
+            <Line
+              type="monotone"
+              dataKey="amount"
+              stroke="#635bff" // Stripe style
+              strokeWidth={3}
+            />
+          </LineChart>
+        </ResponsiveContainer>
       </div>
     </>
   );

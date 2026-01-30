@@ -2,7 +2,8 @@ from fastapi import APIRouter, Request, HTTPException
 import stripe
 
 from app.core.config import STRIPE_WEBHOOK_SECRET
-from app.database.mongo import payments_collection
+from app.core.mongo import payments_collection
+from app.core.mongo import notifications_collection
 
 router = APIRouter(prefix="/webhooks", tags=["Webhooks"])
 
