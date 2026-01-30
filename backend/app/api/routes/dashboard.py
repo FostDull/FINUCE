@@ -41,7 +41,7 @@ def compare_today_yesterday():
                         "$gte": day,
                         "$lt": day + timedelta(days=1)
                     },
-                    "status": "succeeded"
+                    "status": "succeeded", "pending": False
                 }
             },
             {

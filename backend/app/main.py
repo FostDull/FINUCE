@@ -11,7 +11,7 @@ from app.api.routes import transactions
 from app.api.routes import dashboard
 
 from app.api.routes import webhooks
-from app.api.routes import notifications
+# from app.api.routes import notifications
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -63,6 +63,7 @@ app.include_router(accounts.router)
 app.include_router(payments.router)
 app.include_router(transactions.router)
 app.include_router(dashboard.router)
+app.include_router(webhooks.router)
 
 
 @app.get("/", tags=["General"])

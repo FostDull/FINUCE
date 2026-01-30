@@ -9,22 +9,29 @@ export default function StripePaymentForm() {
   const stripe = useStripe();
   const elements = useElements();
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!stripe || !elements) return;
 
     setLoading(true);
+    setErrorMessage(null);
 
-    const { error } = await stripe.confirmPayment({
+    const { error, paymentIntent } = await stripe.confirmPayment({
       elements,
-      confirmParams: {
-        return_url: "http://localhost:5173/dashboard/payments",
-      },
+      redirect: "if_required", // 🔥 CLAVE
     });
 
     if (error) {
       console.error(error.message);
+      setErrorMessage(error.message);
+    } else if (paymentIntent?.status === "succeeded") {
+      console.log("✅ Pago confirmado");
+
+      // 👉 Opcional: redirigir manualmente
+      // window.location.href = "/dashboard/transactions";
     }
 
     setLoading(false);
@@ -33,8 +40,17 @@ export default function StripePaymentForm() {
   return (
     <form onSubmit={handleSubmit}>
       <PaymentElement />
-      <button disabled={!stripe || loading}>
-        {loading ? "Procesando..." : "Confirmar pago"}
+
+      {errorMessage && (
+        <p style={{ color: "red", marginTop: 8 }}>{errorMessage}</p>
+      )}
+
+      <button
+        type="submit"
+        disabled={!stripe || loading}
+        style={{ marginTop: 16 }}
+      >
+        {loading ? "Processing..." : "Pay Now"}
       </button>
     </form>
   );

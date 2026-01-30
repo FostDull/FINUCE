@@ -21,58 +21,24 @@ router = APIRouter(
 )
 
 
-@router.post(
-    "/create-intent",
-    response_model=PaymentIntentResponse,
-    status_code=status.HTTP_200_OK
-)
+@router.post("/create-intent", response_model=PaymentIntentResponse)
 async def create_payment_intent(data: PaymentIntentRequest):
 
-    if not STRIPE_SECRET_KEY:
-        logger.critical("STRIPE_SECRET_KEY no configurada")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Stripe no configurado"
-        )
+    intent = stripe.PaymentIntent.create(
+        amount=data.amount,                     # en centavos
+        currency=data.currency.lower(),
+        description=data.description,
+        automatic_payment_methods={"enabled": True},
+    )
 
-    try:
-        # 1️⃣ Crear PaymentIntent en Stripe
-        intent = stripe.PaymentIntent.create(
-            amount=data.amount,
-            currency=data.currency.lower(),
-            description=data.description,
-            metadata={
-                "environment": "development",
-                "source": "fin-uce",
-            }
-        )
+    payments_collection.insert_one({
+        "stripe_payment_intent_id": intent.id,   # 🔑 CLAVE CORRECTA
+        "amount": data.amount,
+        "currency": data.currency.lower(),
+        "status": intent.status,                 # requires_payment_method
+        "created_at": datetime.utcnow()
+    })
 
-        # 2️⃣ GUARDAR EN MONGO (ESTO ERA LO QUE FALTABA)
-        payments_collection.insert_one({
-            "stripe_payment_intent_id": intent.id,
-            "amount": intent.amount,
-            "currency": intent.currency,
-            "description": intent.description,
-            "status": intent.status,  # requires_payment_method
-            "payment_method": None,
-            "created_at": datetime.utcnow(),
-        })
-
-        # 3️⃣ Retornar client_secret al frontend
-        return PaymentIntentResponse(
-            client_secret=intent.client_secret
-        )
-
-    except stripe.error.StripeError:
-        logger.exception("Stripe error")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Error al crear PaymentIntent"
-        )
-
-    except Exception:
-        logger.exception("Error inesperado en create_payment_intent")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error interno del servidor"
-        )
+    return PaymentIntentResponse(
+        client_secret=intent.client_secret
+    )

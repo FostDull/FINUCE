@@ -3,17 +3,10 @@ from typing import Optional
 
 
 class PaymentIntentRequest(BaseModel):
-    amount: int = Field(
-        ...,
-        gt=0,
-        description="Monto en centavos. Ej: 5000 = $50.00"
-    )
-    currency: str = Field(
-        default="usd",
-        min_length=3,
-        max_length=3
-    )
+    amount: int = Field(..., gt=0)
+    currency: str = Field(default="usd", min_length=3, max_length=3)
     description: Optional[str] = None
+    user_id: Optional[str] = None   # ✅ ESTA LÍNEA ES CLAVE
 
 
 class PaymentIntentResponse(BaseModel):
