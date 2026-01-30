@@ -1,7 +1,10 @@
 import stripe
-from fastapi import APIRouter, HTTPException, status
 import logging
+from datetime import datetime
 
+from fastapi import APIRouter, HTTPException, status
+
+from app.core.mongo import payments_collection
 from app.schemas.payment import (
     PaymentIntentRequest,
     PaymentIntentResponse
@@ -33,6 +36,7 @@ async def create_payment_intent(data: PaymentIntentRequest):
         )
 
     try:
+        # 1️⃣ Crear PaymentIntent en Stripe
         intent = stripe.PaymentIntent.create(
             amount=data.amount,
             currency=data.currency.lower(),
@@ -43,6 +47,18 @@ async def create_payment_intent(data: PaymentIntentRequest):
             }
         )
 
+        # 2️⃣ GUARDAR EN MONGO (ESTO ERA LO QUE FALTABA)
+        payments_collection.insert_one({
+            "stripe_payment_intent_id": intent.id,
+            "amount": intent.amount,
+            "currency": intent.currency,
+            "description": intent.description,
+            "status": intent.status,  # requires_payment_method
+            "payment_method": None,
+            "created_at": datetime.utcnow(),
+        })
+
+        # 3️⃣ Retornar client_secret al frontend
         return PaymentIntentResponse(
             client_secret=intent.client_secret
         )

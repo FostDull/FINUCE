@@ -1,5 +1,5 @@
 from fastapi import APIRouter, status
-from app.database.mongo import payments_collection
+from app.core.mongo import payments_collection
 
 router = APIRouter(
     prefix="/payments/transactions",
