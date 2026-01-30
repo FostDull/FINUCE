@@ -1,79 +1,40 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
-import {
-  Elements,
-  PaymentElement,
-  useStripe,
-  useElements,
-} from "@stripe/react-stripe-js";
-import { supabase } from "../../lib/supabase";
+import StripePaymentForm from "../../components/ui/StripePaymentForm";
+import { createPayment } from "../../services/paymentService";
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
-function CheckoutForm() {
-  const stripe = useStripe();
-  const elements = useElements();
+export default function PaymentMethod() {
+  const [clientSecret, setClientSecret] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!stripe || !elements) return;
-
-    setLoading(true);
-
-    const { error } = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        return_url: "http://localhost:5173/dashboard",
-      },
-    });
-
-    if (error) console.error(error.message);
-    setLoading(false);
+  const handleCreatePayment = async () => {
+    try {
+      setLoading(true);
+      const { client_secret } = await createPayment(5000); // 50.00 USD
+      setClientSecret(client_secret);
+    } catch (e) {
+      console.error(e.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <PaymentElement />
-      <button disabled={!stripe || loading}>
-        {loading ? "Procesando..." : "Pagar"}
-      </button>
-    </form>
-  );
-}
+    <div>
+      {!clientSecret && (
+        <button onClick={handleCreatePayment} disabled={loading}>
+          {loading ? "Creando pago..." : "Pagar"}
+        </button>
+      )}
 
-export default function PaymentMethod() {
-  const [clientSecret, setClientSecret] = useState(null);
-
-  useEffect(() => {
-    const createIntent = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/payments/create-intent`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        },
-      );
-
-      const data = await res.json();
-      setClientSecret(data.client_secret);
-    };
-
-    createIntent();
-  }, []);
-
-  if (!clientSecret) return <p>Cargando Stripe…</p>;
-
-  return (
-    <Elements stripe={stripePromise} options={{ clientSecret }}>
-      <CheckoutForm />
-    </Elements>
+      {clientSecret && (
+        <Elements stripe={stripePromise} options={{ clientSecret }}>
+          <StripePaymentForm />
+        </Elements>
+      )}
+    </div>
   );
 }

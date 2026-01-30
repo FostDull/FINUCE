@@ -1,7 +1,19 @@
-import api from "./api";
+export async function createPayment(amount) {
+  const res = await fetch(`${API_URL}/payments/create-intent`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      amount,
+      currency: "usd",
+      description: "Pago de prueba",
+    }),
+  });
 
-export const createPayment = (amount) =>
-  api.post("/payments", { amount });
+  if (!res.ok) {
+    throw new Error("Error creando payment intent");
+  }
 
-export const payPayment = (paymentId) =>
-  api.post(`/payments/${paymentId}/pay`);
+  return res.json();
+}

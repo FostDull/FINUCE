@@ -1,12 +1,18 @@
 import stripe
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException, status
+import logging
 
 from app.schemas.payment import (
     PaymentIntentRequest,
     PaymentIntentResponse
 )
-from app.core.auth import get_current_user
 from app.core.config import STRIPE_SECRET_KEY
+
+logger = logging.getLogger(__name__)
+
+# 🔐 Validación temprana
+if not STRIPE_SECRET_KEY:
+    raise RuntimeError("STRIPE_SECRET_KEY no está configurada")
 
 stripe.api_key = STRIPE_SECRET_KEY
 
@@ -18,25 +24,23 @@ router = APIRouter(
 
 @router.post(
     "/create-intent",
-    response_model=PaymentIntentResponse
+    response_model=PaymentIntentResponse,
+    status_code=status.HTTP_200_OK
 )
-def create_payment_intent(
-    data: PaymentIntentRequest,
-    user=Depends(get_current_user),
-):
+def create_payment_intent(data: PaymentIntentRequest):
     """
     Crea un PaymentIntent en Stripe.
-    Requiere JWT válido en Authorization header.
+    Autenticación deshabilitada en DEV.
     """
 
     try:
         intent = stripe.PaymentIntent.create(
             amount=data.amount,
-            currency=data.currency,
+            currency=data.currency.lower(),
             description=data.description,
             metadata={
-                "user_id": user.get("sub"),
-                "email": user.get("email"),
+                "environment": "development",
+                "source": "fin-uce",
             }
         )
 
@@ -45,7 +49,15 @@ def create_payment_intent(
         )
 
     except stripe.error.StripeError as e:
+        logger.error(f"Stripe error: {e}")
         raise HTTPException(
-            status_code=400,
-            detail=str(e)
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Error al crear PaymentIntent"
+        )
+
+    except Exception as e:
+        logger.exception("Error inesperado en create_payment_intent")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error interno del servidor"
         )
