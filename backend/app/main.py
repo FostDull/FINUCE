@@ -17,7 +17,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
-    title="FIN-UCE API",
+    title="FINUCE API",
     version="1.0.0",
     description="Backend bancario con FastAPI, Supabase y Stripe"
 )

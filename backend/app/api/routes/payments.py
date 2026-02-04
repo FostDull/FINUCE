@@ -44,19 +44,28 @@ async def create_payment_intent(data: PaymentIntentRequest):
     )
 
 
+# En el backend (FastAPI)
 @router.get("/get-products")
 async def get_products():
     try:
         products = stripe.Product.list(limit=10)
-        # Agrega este log
-        logger.info(f"Productos obtenidos: {len(products.data)}")
-        formatted_products = [
-            {"id": product.id, "name": product.name,
-                "description": product.description, "created": product.created}
-            for product in products.data
-        ]
+
+        # Asegúrate de que se esté obteniendo el precio
+        formatted_products = []
+        for product in products.data:
+            # Si el producto tiene un precio
+            # Obtener el precio del producto
+            price = stripe.Price.list(product=product.id)
+            if price.data:
+                formatted_products.append({
+                    "id": product.id,
+                    "name": product.name,
+                    "description": product.description,
+                    "created": product.created,
+                    # Asumimos que el precio está en el primer precio
+                    "price": price.data[0].unit_amount
+                })
+
         return {"products": formatted_products}
     except stripe.error.StripeError as e:
-        # Agregar log de error
-        logger.error(f"Error al obtener productos de Stripe: {str(e)}")
         return {"error": str(e)}

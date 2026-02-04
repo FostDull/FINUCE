@@ -43,39 +43,50 @@ export default function PaymentMethod() {
   }, []);
 
   return (
-    <div className="products-section">
-      <h2 className="products-title">Productos disponibles</h2>
+    <div className="p-6">
+      <h2 className="text-2xl font-bold text-gray-900 mb-6">
+        Productos Disponibles
+      </h2>
 
       {productsLoading ? (
-        <p className="loading-text">Cargando productos...</p>
+        <p className="text-center text-gray-600">Cargando productos...</p>
       ) : (
-        <div className="products-grid">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {products.length > 0 ? (
             products.map((product) => (
-              <div key={product.id} className="product-card">
-                <div className="product-card-body">
-                  <h3 className="product-name">{product.name}</h3>
-
-                  <p className="product-description">
-                    {product.description || "Descripción no disponible"}
-                  </p>
-
-                  <div className="product-price">
+              <div
+                key={product.id}
+                className="bg-indigo-600 text-white rounded-lg shadow-lg overflow-hidden"
+              >
+                <div className="p-6">
+                  <div className="flex justify-center mb-4">
+                    <img
+                      src="/path/to/your-icon.svg"
+                      alt="Icono del producto"
+                      className="w-16 h-16"
+                    />
+                  </div>
+                  <h3 className="text-lg font-semibold text-white mb-2">
+                    {product.name}
+                  </h3>
+                  <p className="text-sm mb-4">{product.description}</p>
+                  <div className="font-semibold text-xl text-white mb-4">
                     ${(product.price / 100).toFixed(2)} USD
                   </div>
-
                   <button
-                    className="product-button"
+                    className="w-full bg-yellow-500 text-white py-2 rounded-lg hover:bg-yellow-600 transition duration-200"
                     onClick={() => handleCreatePayment(product.price)}
                     disabled={loading}
                   >
-                    {loading ? "Proccessing..." : "PAY NOW"}
+                    {loading ? "Creando pago..." : "Pagar ahora"}
                   </button>
                 </div>
               </div>
             ))
           ) : (
-            <p>No se encontraron productos.</p>
+            <p className="text-center text-gray-600">
+              No se encontraron productos.
+            </p>
           )}
         </div>
       )}
