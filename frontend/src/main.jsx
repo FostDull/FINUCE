@@ -7,6 +7,7 @@ import { loadStripe } from "@stripe/stripe-js";
 
 import App from "./App";
 import { AuthProvider } from "./context/AuthContext";
+import "./index.css";
 
 const STRIPE_KEY =
   import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ||

@@ -42,3 +42,21 @@ async def create_payment_intent(data: PaymentIntentRequest):
     return PaymentIntentResponse(
         client_secret=intent.client_secret
     )
+
+
+@router.get("/get-products")
+async def get_products():
+    try:
+        products = stripe.Product.list(limit=10)
+        # Agrega este log
+        logger.info(f"Productos obtenidos: {len(products.data)}")
+        formatted_products = [
+            {"id": product.id, "name": product.name,
+                "description": product.description, "created": product.created}
+            for product in products.data
+        ]
+        return {"products": formatted_products}
+    except stripe.error.StripeError as e:
+        # Agregar log de error
+        logger.error(f"Error al obtener productos de Stripe: {str(e)}")
+        return {"error": str(e)}

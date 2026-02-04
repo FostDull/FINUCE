@@ -1,130 +1,55 @@
-import { Box, Paper, Typography, Divider } from "@mui/material";
 import LoginForm from "../components/auth/LoginForm";
 import RegisterForm from "../components/auth/RegisterForm";
 
 export default function AuthLayout({ formType = "login" }) {
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        width: "100vw",
-        display: "flex",
-        overflow: "hidden",
-        bgcolor: "#F4F6F8",
-      }}
-    >
-      {/* LEFT — BRAND / TRUST (DESKTOP ONLY) */}
-      <Box
-        sx={{
-          flex: 1,
-          display: { xs: "none", md: "flex" },
-          flexDirection: "column",
-          justifyContent: "space-between",
-          px: 10,
-          py: 7,
-          bgcolor: "#FFFFFF",
-          borderRight: "1px solid #E0E3E7",
-        }}
-      >
-        {/* LOGO */}
-        <Typography
-          fontWeight="bold"
-          fontSize={22}
-          letterSpacing={1}
-          color="#0A1F44"
-        >
-          FIN-UCE
-        </Typography>
+    // CAMBIO CLAVE: w-full y h-screen para llenar todo el navegador
+    <div className="flex w-full min-h-screen bg-white overflow-hidden">
+      {/* LADO IZQUIERDO: Dale un flex-1 para que crezca */}
+      <div className="hidden lg:flex flex-1 flex-col justify-center items-center bg-[#F8F9FA] p-12">
+        <div className="max-w-md w-full">
+          {/* Contenido de marca y escudo... */}
+          <div className="flex items-center gap-2 mb-8">
+            <div className="w-8 h-8 bg-yellow-400 rounded"></div>
+            <h1 className="text-3xl font-bold text-blue-900">FIN-UCE</h1>
+          </div>
 
-        {/* MESSAGE */}
-        <Box>
-          <Typography
-            sx={{
-              fontSize: 30,
-              fontFamily: "serif",
-              color: "#0A1F44",
-              mb: 3,
-              lineHeight: 1.35,
-            }}
-          >
-            Always verify you are
-            <br />
-            accessing FinUCE securely.
-          </Typography>
+          <h2 className="text-3xl text-blue-900 font-light mb-6">
+            Verifica en tu navegador que estás en{" "}
+            <span className="font-semibold">FinUCE.</span>
+          </h2>
 
-          <Box
-            sx={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 1,
-              px: 3,
-              py: 1.5,
-              borderRadius: 999,
-              bgcolor: "#F1F3F5",
-              fontSize: 14,
-              color: "#0A1F44",
-              fontWeight: 500,
-            }}
-          >
-            🔒 https://web.fin-uce.edu.ec
-          </Box>
+          <div className="bg-white border border-green-200 text-green-700 px-4 py-2 rounded-full inline-flex items-center gap-2 text-sm mb-12 shadow-sm">
+            <span>🔒</span> https://web.fin-uce.edu.ec
+          </div>
 
-          {/* ILLUSTRATION PLACEHOLDER */}
-          <Box
-            sx={{
-              width: 280,
-              height: 280,
-              bgcolor: "#EEF2F5",
-              borderRadius: "50%",
-              mt: 7,
-              mx: "auto",
-            }}
-          />
-        </Box>
+          {/* Ilustración Controlada */}
+          <div className="relative flex justify-center">
+            <div className="w-72 h-72 bg-blue-100/40 rounded-full absolute -bottom-10 animate-pulse"></div>
+            <span className="text-[150px] relative z-10">🛡️</span>
+          </div>
 
-        {/* FOOTER */}
-        <Typography fontSize={12} color="text.secondary">
-          © 2026 FIN-UCE. All rights reserved.
-        </Typography>
-      </Box>
+          <div className="mt-20 space-y-3 text-sm text-gray-500">
+            <p>01. Cuida tu usuario y contraseña</p>
+            <p>02. Verifica siempre el candado de seguridad</p>
+          </div>
+        </div>
+      </div>
 
-      {/* RIGHT — AUTH FORM */}
-      <Box
-        sx={{
-          flex: 1,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          p: { xs: 2, sm: 4 },
-        }}
-      >
-        <Paper
-          elevation={4}
-          sx={{
-            width: "100%",
-            maxWidth: 440,
-            p: { xs: 3, sm: 5 },
-            borderRadius: 3,
-            bgcolor: "#FFFFFF",
-          }}
-        >
-          {/* MOBILE HEADER */}
-          <Box
-            sx={{
-              display: { xs: "block", md: "none" },
-              textAlign: "center",
-              mb: 3,
-            }}
-          >
-            <Typography fontWeight="bold" fontSize={20} color="#0A1F44">
-              FIN-UCE
-            </Typography>
-            <Divider sx={{ mt: 1 }} />
-          </Box>
+      {/* LADO DERECHO: El Formulario */}
+      <div className="flex-1 flex flex-col justify-center items-center bg-white p-6">
+        <div className="w-full max-w-[420px]">
+          {/* El componente LoginForm o RegisterForm aquí */}
+          <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-[0_10px_40px_rgba(0,0,0,0.04)]">
+            {formType === "login" ? <LoginForm /> : <RegisterForm />}
+          </div>
+        </div>
 
-          {formType === "login" ? <LoginForm /> : <RegisterForm />}
-        </Paper>
-      </Box>
-    </Box>
+        {/* Footer pequeño */}
+        <p className="mt-12 text-[10px] text-gray-400 uppercase tracking-widest">
+          © 2026 FIN-UCE. TODOS LOS DERECHOS RESERVADOS.
+        </p>
+      </div>
+    </div>
   );
 }

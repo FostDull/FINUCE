@@ -1,179 +1,118 @@
-import {
-  Typography,
-  TextField,
-  Button,
-  Grid,
-  Box,
-  Link,
-  Divider,
-} from "@mui/material";
-import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
-import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { supabase } from "../../lib/supabase";
 
 export default function LoginForm() {
   const navigate = useNavigate();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // 🔐 EMAIL / PASSWORD LOGIN
   const handleLogin = async () => {
     setLoading(true);
-
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-
-    if (error) {
-      alert(error.message);
-    }
-
+    if (error) alert(error.message);
     setLoading(false);
   };
 
-  // 🔐 GOOGLE LOGIN
   const handleGoogleLogin = async () => {
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: {
-        redirectTo: window.location.origin,
-      },
+      options: { redirectTo: window.location.origin },
     });
   };
 
   return (
-    <>
-      {/* HEADER */}
-      <Box mb={4}>
-        <Typography variant="h5" fontFamily="serif" color="#0A1F44">
-          Welcome back
-        </Typography>
-        <Typography fontSize={14} color="text.secondary">
-          Sign in to access your FinUCE account
-        </Typography>
-      </Box>
+    <div className="w-full">
+      <h2 className="text-2xl font-semibold text-blue-900 mb-6">
+        Bienvenido a tu FinUCE
+      </h2>
 
-      {/* EMAIL */}
-      <TextField
-        label="Email address"
-        placeholder="you@example.com"
-        fullWidth
-        margin="normal"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        sx={{
-          "& .MuiOutlinedInput-root": {
-            borderRadius: 2,
-            bgcolor: "#FFFFFF",
-          },
-        }}
-      />
+      <div className="space-y-4">
+        <div>
+          <label className="text-sm font-medium text-gray-600">
+            Usuario / Email
+          </label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full mt-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-yellow-400 outline-none"
+          />
+          <div className="text-right text-xs text-blue-600 mt-1 cursor-pointer">
+            ¿Olvidaste tu usuario?
+          </div>
+        </div>
 
-      {/* PASSWORD */}
-      <TextField
-        label="Password"
-        type="password"
-        fullWidth
-        margin="normal"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        sx={{
-          "& .MuiOutlinedInput-root": {
-            borderRadius: 2,
-            bgcolor: "#FFFFFF",
-          },
-        }}
-      />
+        <div>
+          <label className="text-sm font-medium text-gray-600">
+            Contraseña
+          </label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full mt-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-yellow-400 outline-none"
+          />
+          <div className="text-right text-xs text-blue-600 mt-1 cursor-pointer">
+            ¿Olvidaste tu contraseña?
+          </div>
+        </div>
 
-      {/* FORGOT PASSWORD */}
-      <Box textAlign="right" mt={1} mb={3}>
-        <Link underline="hover" fontSize={13}>
-          Forgot your password?
-        </Link>
-      </Box>
+        <button
+          onClick={handleLogin}
+          disabled={loading}
+          className="w-full bg-[#FFF082] hover:bg-yellow-300 text-gray-700 font-medium py-2 rounded-md transition mt-4"
+        >
+          {loading ? "Ingresando..." : "Ingresar"}
+        </button>
 
-      {/* SIGN IN */}
-      <Button
-        fullWidth
-        size="large"
-        disabled={loading}
-        sx={{
-          bgcolor: "#0A1F44",
-          color: "#FFFFFF",
-          py: 1.6,
-          fontWeight: "bold",
-          borderRadius: 2,
-          "&:hover": { bgcolor: "#091833" },
-        }}
-        onClick={handleLogin}
-      >
-        {loading ? "Signing in..." : "Sign in"}
-      </Button>
+        {/* DIVIDER */}
+        <div className="relative flex items-center py-4">
+          <div className="flex-grow border-t border-gray-200"></div>
+          <span className="mx-4 text-gray-400 text-xs uppercase">O</span>
+          <div className="flex-grow border-t border-gray-200"></div>
+        </div>
 
-      {/* DIVIDER */}
-      <Box my={3}>
-        <Divider>
-          <Typography fontSize={12} color="text.secondary">
-            OR
-          </Typography>
-        </Divider>
-      </Box>
+        {/* GOOGLE BUTTON - IMPORTANTE: h-5 y w-5 para que no sea gigante */}
+        <button
+          onClick={handleGoogleLogin}
+          className="w-full flex items-center justify-center gap-3 border border-gray-300 py-2 rounded-md hover:bg-gray-50 transition text-gray-700"
+        >
+          <img
+            src="https://www.svgrepo.com/show/355037/google.svg"
+            className="w-5 h-5 object-contain"
+            alt="Google"
+          />
+          <span>Continuar con Google</span>
+        </button>
+      </div>
 
-      {/* GOOGLE LOGIN */}
-      <Button
-        fullWidth
-        variant="outlined"
-        sx={{
-          py: 1.4,
-          borderRadius: 2,
-          textTransform: "none",
-          fontWeight: 500,
-        }}
-        onClick={handleGoogleLogin}
-      >
-        Continue with Google
-      </Button>
-
-      {/* ACTION CARDS */}
-      <Grid container spacing={2} mt={3}>
-        <Grid item xs={6}>
-          <Button variant="outlined" fullWidth sx={{ py: 2, borderRadius: 2 }}>
-            <LockOutlinedIcon fontSize="small" />
-            <Box ml={1} textAlign="left">
-              <Typography fontWeight="bold" fontSize={13}>
-                Account locked?
-              </Typography>
-              <Typography fontSize={12} color="text.secondary">
-                Unlock access
-              </Typography>
-            </Box>
-          </Button>
-        </Grid>
-
-        <Grid item xs={6}>
-          <Button
-            variant="outlined"
-            fullWidth
-            sx={{ py: 2, borderRadius: 2 }}
-            onClick={() => navigate("/register")}
-          >
-            <PersonOutlineIcon fontSize="small" />
-            <Box ml={1} textAlign="left">
-              <Typography fontWeight="bold" fontSize={13}>
-                New user?
-              </Typography>
-              <Typography fontSize={12} color="text.secondary">
-                Create account
-              </Typography>
-            </Box>
-          </Button>
-        </Grid>
-      </Grid>
-    </>
+      {/* ACTION CARDS (ESTILO PICHINCHA) */}
+      <div className="grid grid-cols-2 gap-4 mt-8">
+        <div className="flex flex-col items-center p-4 border border-gray-100 rounded-lg text-center bg-gray-50/50">
+          <span className="text-xl mb-1">🔓</span>
+          <p className="text-[10px] font-bold text-gray-700 leading-tight">
+            ¿Cuenta bloqueada?
+            <br />
+            <span className="font-normal text-blue-600">Desbloquéala aquí</span>
+          </p>
+        </div>
+        <div
+          onClick={() => navigate("/register")}
+          className="flex flex-col items-center p-4 border border-gray-100 rounded-lg text-center bg-gray-50/50 cursor-pointer"
+        >
+          <span className="text-xl mb-1">👤</span>
+          <p className="text-[10px] font-bold text-gray-700 leading-tight">
+            ¿Usuario nuevo?
+            <br />
+            <span className="font-normal text-blue-600">Regístrate ahora</span>
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }

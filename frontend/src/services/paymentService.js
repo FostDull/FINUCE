@@ -48,3 +48,24 @@ export async function getDashboardSummary() {
   if (!res.ok) throw new Error("Error cargando resumen");
   return res.json();
 }
+
+
+export async function getProducts() {
+  if (!API_URL) {
+    throw new Error("VITE_API_URL no está definida");
+  }
+
+  const res = await fetch(`${API_URL}/payments/get-products`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.detail || "Error obteniendo productos de Stripe");
+  }
+
+  return res.json(); // Devuelve la lista de productos
+}

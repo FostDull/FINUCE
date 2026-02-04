@@ -4,7 +4,8 @@ services:
     container_name: fin-backend
     env_file:
       - ./backend/.env
-    
+    environment:
+      - PYTHONUNBUFFERED=1
     dns:
       - 8.8.8.8
       - 1.1.1.1

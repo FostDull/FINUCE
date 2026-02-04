@@ -1,89 +1,112 @@
-import { Box, Button, Divider, Typography } from "@mui/material";
+import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 
 export default function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isExpanded, setIsExpanded] = useState(true);
 
   const isActive = (path) => location.pathname === path;
 
-  const navButton = (label, path) => (
-    <Button
-      fullWidth
-      onClick={() => navigate(path)}
-      sx={{
-        justifyContent: "flex-start",
-        py: 1.4,
-        px: 2,
-        mb: 0.5,
-        textTransform: "none",
-        fontWeight: isActive(path) ? "bold" : "normal",
-        bgcolor: isActive(path) ? "#E3F2FD" : "transparent",
-        color: "#0A1F44",
-        borderRadius: 1,
-        "&:hover": {
-          bgcolor: "#E3F2FD",
-        },
-      }}
+  const navItems = [
+    {
+      label: "Home",
+      path: "/dashboard",
+      icon: (
+        <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+      ),
+    },
+    {
+      label: "Send Money",
+      path: "/dashboard/send",
+      icon: (
+        <path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      ),
+    },
+    {
+      label: "Transactions",
+      path: "/dashboard/transactions",
+      icon: (
+        <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+      ),
+    },
+    {
+      label: "Payment Method",
+      path: "/dashboard/payments",
+      icon: (
+        <path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+      ),
+    },
+  ];
+
+  const NavButton = ({ label, path, icon, isRed = false, onClick = null }) => (
+    <button
+      onClick={onClick || (() => navigate(path))}
+      className={`w-full flex items-center px-4 py-3 mb-2 rounded-lg transition-all duration-200 group
+      ${
+        isActive(path) && !isRed
+          ? "bg-blue-700 text-white shadow-md" /* Azul marino más claro cuando está activo */
+          : "bg-blue-800 text-gray-200 hover:bg-red-600 hover:text-white" /* Azul base más suave que el anterior */
+      }
+      ${isRed ? "text-red-500 hover:bg-red-50 mt-auto" : ""} 
+    `}
     >
-      {label}
-    </Button>
+      <svg
+        className={`w-5 h-5 shrink-0 transition-colors 
+          ${isActive(path) && !isRed ? "text-white" : "text-gray-300 group-hover:text-white"}`}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        {icon}
+      </svg>
+      {isExpanded && <span className="ml-3 font-bold text-sm">{label}</span>}
+    </button>
   );
 
   return (
-    <Box
-      sx={{
-        width: 260,
-        height: "100vh",
-        bgcolor: "#FFFFFF",
-        borderRight: "1px solid #E0E0E0",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
-        px: 2,
-        py: 3,
-      }}
+    <aside
+      className={`h-screen bg-white border-r border-gray-200 flex flex-col justify-between py-6 transition-all duration-300 ${isExpanded ? "w-64" : "w-20"}`}
     >
-      {/* TOP */}
-      <Box>
-        <Typography fontWeight="bold" fontSize={20} mb={3} color="#0A1F44">
-          FIN-UCE
-        </Typography>
+      <div>
+        <div className="px-6 mb-10 flex items-center justify-between">
+          {isExpanded && (
+            <h2 className="font-bold text-xl text-[#0A1F44]">FIN-UCE</h2>
+          )}
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="p-1.5 rounded-lg bg-gray-50 hover:bg-gray-200 text-gray-500"
+          >
+            {isExpanded ? "◀" : "▶"}
+          </button>
+        </div>
+        <nav className="px-3">
+          {navItems.map((item) => (
+            <NavButton key={item.path} {...item} />
+          ))}
+        </nav>
+      </div>
 
-        {navButton("Home", "/dashboard")}
-        {navButton("Send Money", "/dashboard/send")}
-        {navButton("Transactions", "/dashboard/transactions")}
-        {navButton("Payment Method", "/dashboard/payments")}
-      </Box>
-
-      {/* BOTTOM */}
-      <Box>
-        <Divider sx={{ my: 2 }} />
-
-        {navButton("Configuration", "/dashboard/config")}
-
-        <Button
-          fullWidth
-          sx={{
-            justifyContent: "flex-start",
-            py: 1.4,
-            px: 2,
-            mt: 1,
-            textTransform: "none",
-            color: "#B71C1C",
-            "&:hover": {
-              bgcolor: "#FDECEA",
-            },
-          }}
+      <div className="px-3">
+        <NavButton
+          label="Log out"
+          path="/"
+          isRed
+          icon={
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+            />
+          }
           onClick={async () => {
             await supabase.auth.signOut();
             navigate("/");
           }}
-        >
-          Log out
-        </Button>
-      </Box>
-    </Box>
+        />
+      </div>
+    </aside>
   );
 }
