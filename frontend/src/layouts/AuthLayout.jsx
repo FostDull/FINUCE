@@ -10,17 +10,16 @@ export default function AuthLayout({ formType = "login" }) {
         <div className="max-w-md w-full">
           {/* Contenido de marca y escudo... */}
           <div className="flex items-center gap-2 mb-8">
-            <div className="w-8 h-8 bg-yellow-400 rounded"></div>
-            <h1 className="text-3xl font-bold text-blue-900">FIN-UCE</h1>
+            <h1 className="text-3xl font-bold text-blue-900">FINUCE</h1>
           </div>
 
           <h2 className="text-3xl text-blue-900 font-light mb-6">
-            Verifica en tu navegador que estás en{" "}
-            <span className="font-semibold">FinUCE.</span>
+            Verifies in your browser that you are on{" "}
+            <span className="font-semibold">FINUCE.</span>
           </h2>
 
           <div className="bg-white border border-green-200 text-green-700 px-4 py-2 rounded-full inline-flex items-center gap-2 text-sm mb-12 shadow-sm">
-            <span>🔒</span> https://web.fin-uce.edu.ec
+            <span>🔒</span> https://web.finuce.edu.ec
           </div>
 
           {/* Ilustración Controlada */}
@@ -30,8 +29,8 @@ export default function AuthLayout({ formType = "login" }) {
           </div>
 
           <div className="mt-20 space-y-3 text-sm text-gray-500">
-            <p>01. Cuida tu usuario y contraseña</p>
-            <p>02. Verifica siempre el candado de seguridad</p>
+            <p>01. Protect your username and password</p>
+            <p>02. Verifies always the security lock</p>
           </div>
         </div>
       </div>
@@ -47,7 +46,7 @@ export default function AuthLayout({ formType = "login" }) {
 
         {/* Footer pequeño */}
         <p className="mt-12 text-[10px] text-gray-400 uppercase tracking-widest">
-          © 2026 FIN-UCE. TODOS LOS DERECHOS RESERVADOS.
+          © 2026 FINUCE. ALL RIGHTS RESERVED.
         </p>
       </div>
     </div>

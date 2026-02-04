@@ -44,24 +44,25 @@ export default function Sidebar() {
     <button
       onClick={onClick || (() => navigate(path))}
       className={`w-full flex items-center px-4 py-3 mb-2 rounded-lg transition-all duration-200 group
-      ${
-        isActive(path) && !isRed
-          ? "bg-blue-700 text-white shadow-md" /* Azul marino más claro cuando está activo */
-          : "bg-blue-800 text-gray-200 hover:bg-red-600 hover:text-white" /* Azul base más suave que el anterior */
-      }
-      ${isRed ? "text-red-500 hover:bg-red-50 mt-auto" : ""} 
-    `}
+    ${
+      isActive(path) && !isRed
+        ? "bg-[#1e3a8a] text-white shadow-md" /* Azul Marino Intenso Activo */
+        : "bg-[#2563eb] text-white hover:bg-red-600" /* Azul Marino Base que cambia a Rojo */
+    }
+    ${isRed ? "bg-red-600 text-white hover:bg-red-700 mt-auto" : ""} 
+  `}
     >
       <svg
-        className={`w-5 h-5 shrink-0 transition-colors 
-          ${isActive(path) && !isRed ? "text-white" : "text-gray-300 group-hover:text-white"}`}
+        className={`w-5 h-5 shrink-0 transition-colors ${isActive(path) && !isRed ? "text-white" : "text-blue-100 group-hover:text-white"}`}
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
       >
         {icon}
       </svg>
-      {isExpanded && <span className="ml-3 font-bold text-sm">{label}</span>}
+      {isExpanded && (
+        <span className="ml-3 font-bold text-sm tracking-wide">{label}</span>
+      )}
     </button>
   );
 

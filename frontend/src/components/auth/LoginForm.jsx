@@ -28,13 +28,13 @@ export default function LoginForm() {
   return (
     <div className="w-full">
       <h2 className="text-2xl font-semibold text-blue-900 mb-6">
-        Bienvenido a tu FinUCE
+        Welcome to FINUCE
       </h2>
 
       <div className="space-y-4">
         <div>
           <label className="text-sm font-medium text-gray-600">
-            Usuario / Email
+            User / Email
           </label>
           <input
             type="email"
@@ -43,14 +43,12 @@ export default function LoginForm() {
             className="w-full mt-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-yellow-400 outline-none"
           />
           <div className="text-right text-xs text-blue-600 mt-1 cursor-pointer">
-            ¿Olvidaste tu usuario?
+            Forgot your username?
           </div>
         </div>
 
         <div>
-          <label className="text-sm font-medium text-gray-600">
-            Contraseña
-          </label>
+          <label className="text-sm font-medium text-gray-600">Password</label>
           <input
             type="password"
             value={password}
@@ -58,7 +56,7 @@ export default function LoginForm() {
             className="w-full mt-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-yellow-400 outline-none"
           />
           <div className="text-right text-xs text-blue-600 mt-1 cursor-pointer">
-            ¿Olvidaste tu contraseña?
+            Forgot your password?
           </div>
         </div>
 
@@ -67,7 +65,7 @@ export default function LoginForm() {
           disabled={loading}
           className="w-full bg-[#FFF082] hover:bg-yellow-300 text-gray-700 font-medium py-2 rounded-md transition mt-4"
         >
-          {loading ? "Ingresando..." : "Ingresar"}
+          {loading ? "Entering..." : "Enter"}
         </button>
 
         {/* DIVIDER */}
@@ -87,7 +85,7 @@ export default function LoginForm() {
             className="w-5 h-5 object-contain"
             alt="Google"
           />
-          <span>Continuar con Google</span>
+          <span>Continue with Google</span>
         </button>
       </div>
 
@@ -96,9 +94,9 @@ export default function LoginForm() {
         <div className="flex flex-col items-center p-4 border border-gray-100 rounded-lg text-center bg-gray-50/50">
           <span className="text-xl mb-1">🔓</span>
           <p className="text-[10px] font-bold text-gray-700 leading-tight">
-            ¿Cuenta bloqueada?
+            Account blocked?
             <br />
-            <span className="font-normal text-blue-600">Desbloquéala aquí</span>
+            <span className="font-normal text-blue-600">Unlock it here</span>
           </p>
         </div>
         <div
@@ -107,9 +105,9 @@ export default function LoginForm() {
         >
           <span className="text-xl mb-1">👤</span>
           <p className="text-[10px] font-bold text-gray-700 leading-tight">
-            ¿Usuario nuevo?
+            New user?
             <br />
-            <span className="font-normal text-blue-600">Regístrate ahora</span>
+            <span className="font-normal text-blue-600">Register now</span>
           </p>
         </div>
       </div>
