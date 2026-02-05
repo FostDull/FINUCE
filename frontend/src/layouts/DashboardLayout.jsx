@@ -33,11 +33,9 @@ export default function DashboardLayout() {
         </header>
 
         {/* CONTENIDO DINÁMICO */}
-        {/* CONTENIDO DINÁMICO */}
         <main className="flex-1 overflow-y-auto p-4 md:p-8 bg-[#F8FAFC]">
           <div className="max-w-6xl mx-auto text-slate-800">
-            {" "}
-            {/* <--- text-slate-800 fuerza el color oscuro */}
+            {/* Aquí se renderizarán las rutas hijas */}
             <Outlet />
           </div>
         </main>

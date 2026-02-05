@@ -16,8 +16,7 @@ router = APIRouter(prefix="/webhooks", tags=["Webhooks"])
 async def stripe_webhook(request: Request):
     """
     Webhook oficial de Stripe.
-    ⚠️ NO debe llamarse manualmente desde el navegador o Postman.
-    Solo Stripe (Dashboard o CLI) puede invocarlo.
+    ⚠️ Solo Stripe puede llamar a este endpoint.
     """
 
     # 1️⃣ Leer payload y firma
@@ -25,11 +24,8 @@ async def stripe_webhook(request: Request):
     sig_header = request.headers.get("stripe-signature")
 
     if not sig_header:
-        logger.warning("Webhook llamado sin Stripe-Signature")
-        raise HTTPException(
-            status_code=400,
-            detail="Missing Stripe-Signature header"
-        )
+        logger.warning("Webhook sin Stripe-Signature")
+        raise HTTPException(status_code=400, detail="Missing Stripe-Signature")
 
     # 2️⃣ Verificar firma
     try:
@@ -45,51 +41,72 @@ async def stripe_webhook(request: Request):
         logger.error("Payload inválido")
         raise HTTPException(status_code=400, detail="Invalid payload")
 
-    # 3️⃣ Datos del evento
     event_type = event["type"]
     intent = event["data"]["object"]
     intent_id = intent["id"]
 
-    logger.info(f"📩 Stripe event recibido: {event_type} | {intent_id}")
+    logger.info(f"📩 Stripe event: {event_type} | {intent_id}")
 
-    # 4️⃣ Manejo de eventos importantes
+    # 🔹 Base update (idempotente)
+    base_filter = {"stripe_payment_intent_id": intent_id}
+
+    # 3️⃣ Payment succeeded
     if event_type == "payment_intent.succeeded":
+        payment_method_id = intent.get("payment_method")
+
+        card_info = {}
+        if payment_method_id:
+            try:
+                pm = stripe.PaymentMethod.retrieve(payment_method_id)
+                if pm["type"] == "card":
+                    card_info = {
+                        "payment_method": "card",
+                        "brand": pm["card"]["brand"],
+                        "last4": pm["card"]["last4"],
+                    }
+            except Exception as e:
+                logger.warning(f"No se pudo obtener método de pago: {e}")
+
+        update = {
+            "status": intent["status"],  # succeeded
+            "amount_received": intent.get("amount_received", 0) / 100,
+            "currency": intent.get("currency"),
+            "paid_at": datetime.utcnow(),
+            **card_info,
+        }
+
         result = payments_collection.update_one(
-            {"stripe_payment_intent_id": intent_id},
-            {
-                "$set": {
-                    "status": "succeeded",
-                    "payment_method": intent["payment_method_types"][0],
-                    "amount_received": intent.get("amount_received"),
-                    "paid_at": datetime.utcnow(),
-                }
-            }
+            base_filter,
+            {"$set": update},
+            upsert=False,
         )
 
         logger.info(
-            f"✅ PaymentIntent actualizado "
+            f"✅ Payment actualizado "
             f"(matched={result.matched_count}, modified={result.modified_count})"
         )
 
+    # 4️⃣ Payment failed
     elif event_type == "payment_intent.payment_failed":
+        error = intent.get("last_payment_error", {})
+
         payments_collection.update_one(
-            {"stripe_payment_intent_id": intent_id},
+            base_filter,
             {
                 "$set": {
                     "status": "failed",
-                    "failure_reason": (
-                        intent.get("last_payment_error", {})
-                        .get("message", "unknown")
-                    ),
+                    "failure_reason": error.get("message", "unknown"),
                     "failed_at": datetime.utcnow(),
                 }
             }
         )
-        logger.warning(f"❌ PaymentIntent fallido: {intent_id}")
 
+        logger.warning(f"❌ Payment fallido: {intent_id}")
+
+    # 5️⃣ Payment canceled
     elif event_type == "payment_intent.canceled":
         payments_collection.update_one(
-            {"stripe_payment_intent_id": intent_id},
+            base_filter,
             {
                 "$set": {
                     "status": "canceled",
@@ -97,11 +114,12 @@ async def stripe_webhook(request: Request):
                 }
             }
         )
-        logger.info(f"⏹️ PaymentIntent cancelado: {intent_id}")
 
+        logger.info(f"⏹️ Payment cancelado: {intent_id}")
+
+    # 6️⃣ Otros eventos (ignorados)
     else:
-        # Stripe envía MUCHOS eventos que no necesitas
         logger.debug(f"Evento ignorado: {event_type}")
 
-    # 5️⃣ Stripe exige 200 OK
-    return {"status": "ok"}
+    # 7️⃣ Stripe exige 200 OK
+    return {"received": True}

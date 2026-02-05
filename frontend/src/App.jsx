@@ -3,10 +3,10 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 
 import DashboardLayout from "./layouts/DashboardLayout";
-import PrivateRoute from "./routes/PrivateRoute";
+import PrivateRoute from "./routes/PrivateRoute"; // Asegúrate de que esto esté bien
 
 import DashboardHome from "./pages/dashboard/DashboardHome";
-import SendMoney from "./pages/dashboard/SendMoney";
+import Payments from "./pages/dashboard/Payments";
 import Transactions from "./pages/dashboard/Transactions";
 import PaymentMethod from "./pages/dashboard/PaymentMethod";
 import Configuration from "./pages/dashboard/Configuration";
@@ -14,17 +14,19 @@ import Configuration from "./pages/dashboard/Configuration";
 export default function App() {
   return (
     <Routes>
-      {/* Public */}
+      {/* Public Routes */}
       <Route path="/" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
-      {/* Protected */}
+      {/* Protected Routes */}
       <Route element={<PrivateRoute />}>
+        {/* Dashboard Layout */}
         <Route path="/dashboard" element={<DashboardLayout />}>
+          {/* Subroutes of DashboardLayout */}
           <Route index element={<DashboardHome />} />
-          <Route path="send" element={<SendMoney />} />
+          <Route path="payments" element={<Payments />} />
           <Route path="transactions" element={<Transactions />} />
-          <Route path="payments" element={<PaymentMethod />} />
+          <Route path="/dashboard/payment-method" element={<PaymentMethod />} />
           <Route path="config" element={<Configuration />} />
         </Route>
       </Route>

@@ -1,95 +1,66 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
-import { createPayment, getProducts } from "../../services/paymentService";
+import { createPayment } from "../../services/paymentService";
 import StripePaymentForm from "../../components/ui/StripePaymentForm";
 
-// Cargar la clave pública de Stripe desde las variables de entorno
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+const STRIPE_PK = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+
+if (!STRIPE_PK) {
+  throw new Error("VITE_STRIPE_PUBLISHABLE_KEY no está definida");
+}
+
+const stripePromise = loadStripe(STRIPE_PK);
 
 export default function PaymentMethod() {
   const [clientSecret, setClientSecret] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [products, setProducts] = useState([]);
-  const [productsLoading, setProductsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [paymentError, setPaymentError] = useState(null);
 
-  // Función para crear un pago en Stripe
-  const handleCreatePayment = async (amount) => {
-    try {
-      setLoading(true);
-      const { client_secret } = await createPayment(amount); // Enviar la cantidad en centavos
-      setClientSecret(client_secret); // Guardar el client_secret
-    } catch (e) {
-      console.error("Error creating payment:", e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const location = useLocation();
+  const amount = Number(new URLSearchParams(location.search).get("amount"));
 
-  // Obtener productos desde el backend
   useEffect(() => {
-    const fetchProducts = async () => {
+    if (!amount || isNaN(amount) || amount <= 0) {
+      setPaymentError("Monto no válido");
+      setLoading(false);
+      return;
+    }
+
+    (async () => {
       try {
-        const data = await getProducts();
-        setProducts(data.products);
-      } catch (error) {
-        console.error("Error fetching products:", error);
+        const res = await createPayment(amount);
+        if (!res?.client_secret) {
+          throw new Error("Stripe no devolvió client_secret");
+        }
+        setClientSecret(res.client_secret);
+      } catch (err) {
+        setPaymentError(err.message);
       } finally {
-        setProductsLoading(false);
+        setLoading(false);
       }
-    };
+    })();
+  }, [amount]);
 
-    fetchProducts();
-  }, []);
+  if (loading) {
+    return <p className="p-6 text-center">Cargando pago…</p>;
+  }
 
+  if (paymentError) {
+    return <p className="p-6 text-center text-red-600">{paymentError}</p>;
+  }
+
+  // ⚠️ OJO: Elements solo se renderiza si clientSecret existe
   return (
     <div className="p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">
-        Productos Disponibles
-      </h2>
+      <h2 className="text-2xl font-bold mb-6">Método de Pago</h2>
 
-      {productsLoading ? (
-        <p className="text-center text-gray-600">Cargando productos...</p>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {products.length > 0 ? (
-            products.map((product) => (
-              <div
-                key={product.id}
-                className="bg-indigo-600 text-white rounded-lg shadow-lg overflow-hidden"
-              >
-                <div className="p-6">
-                  <div className="flex justify-center mb-4">
-                    <img
-                      src="/path/to/your-icon.svg"
-                      alt="Icono del producto"
-                      className="w-16 h-16"
-                    />
-                  </div>
-                  <h3 className="text-lg font-semibold text-white mb-2">
-                    {product.name}
-                  </h3>
-                  <p className="text-sm mb-4">{product.description}</p>
-                  <div className="font-semibold text-xl text-white mb-4">
-                    ${(product.price / 100).toFixed(2)} USD
-                  </div>
-                  <button
-                    className="w-full bg-yellow-500 text-white py-2 rounded-lg hover:bg-yellow-600 transition duration-200"
-                    onClick={() => handleCreatePayment(product.price)}
-                    disabled={loading}
-                  >
-                    {loading ? "Creando pago..." : "Pagar ahora"}
-                  </button>
-                </div>
-              </div>
-            ))
-          ) : (
-            <p className="text-center text-gray-600">
-              No se encontraron productos.
-            </p>
-          )}
-        </div>
+      {!clientSecret && !paymentError && (
+        <p className="text-gray-600">Inicializando pago…</p>
       )}
+
+      {paymentError && <p className="text-red-600">{paymentError}</p>}
 
       {clientSecret && (
         <Elements stripe={stripePromise} options={{ clientSecret }}>

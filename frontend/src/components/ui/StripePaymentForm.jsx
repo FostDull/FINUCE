@@ -21,16 +21,13 @@ export default function StripePaymentForm() {
 
     const { error, paymentIntent } = await stripe.confirmPayment({
       elements,
-      redirect: "if_required", // 🔥 CLAVE
+      redirect: "if_required",
     });
 
     if (error) {
-      console.error(error.message);
       setErrorMessage(error.message);
     } else if (paymentIntent?.status === "succeeded") {
       console.log("✅ Pago confirmado");
-
-      // 👉 Opcional: redirigir manualmente
       // window.location.href = "/dashboard/transactions";
     }
 
@@ -38,19 +35,56 @@ export default function StripePaymentForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form
+      onSubmit={handleSubmit}
+      className="max-w-lg mx-auto bg-white rounded-xl shadow-md p-6"
+    >
       <PaymentElement />
 
       {errorMessage && (
-        <p style={{ color: "red", marginTop: 8 }}>{errorMessage}</p>
+        <p className="mt-4 text-sm text-red-600 font-medium">{errorMessage}</p>
       )}
 
       <button
         type="submit"
         disabled={!stripe || loading}
-        style={{ marginTop: 16 }}
+        className={`
+          mt-6 w-full flex items-center justify-center gap-2
+          rounded-lg px-6 py-3 text-sm font-semibold
+          transition-all duration-200
+          ${
+            loading || !stripe
+              ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+              : "bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-lg active:scale-[0.98]"
+          }
+        `}
       >
-        {loading ? "Processing..." : "Pay Now"}
+        {loading ? (
+          <>
+            <svg
+              className="w-5 h-5 animate-spin text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+              />
+            </svg>
+            Processing…
+          </>
+        ) : (
+          "Pay Now"
+        )}
       </button>
     </form>
   );

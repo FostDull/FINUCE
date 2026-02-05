@@ -1,20 +1,36 @@
 const API_URL = import.meta.env.VITE_API_URL;
 
-// Función para manejar el error
+if (!API_URL) {
+  throw new Error("VITE_API_URL no está definida");
+}
+
+/**
+ * Manejo centralizado de errores HTTP
+ */
 const handleError = async (res) => {
-  const error = await res.json().catch(() => ({}));
-  throw new Error(error.detail || "Error procesando la solicitud");
+  let message = "Error procesando la solicitud";
+
+  try {
+    const contentType = res.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      const error = await res.json();
+      message = error.detail || error.message || message;
+    }
+  } catch (_) {}
+
+  throw new Error(`Error ${res.status}: ${message}`);
 };
 
-// Crear un pago en Stripe
+/**
+ * Crear PaymentIntent en Stripe
+ */
 export async function createPayment(amount) {
-  if (!API_URL) {
-    throw new Error("VITE_API_URL no está definida");
-  }
-
-  if (!amount || amount <= 0) {
+  if (!amount || Number(amount) <= 0) {
     throw new Error("Monto inválido");
   }
+
+  // Stripe trabaja SIEMPRE en centavos (enteros)
+  const amountInCents = Math.round(Number(amount));
 
   const res = await fetch(`${API_URL}/payments/create-intent`, {
     method: "POST",
@@ -22,75 +38,66 @@ export async function createPayment(amount) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      amount: Number(amount),  // Asegurarse de que el monto sea un número
+      amount: amountInCents,
       currency: "usd",
-      description: "Pago de prueba",
+      description: "Pago de producto",
     }),
   });
 
   if (!res.ok) {
-    await handleError(res); // Maneja el error de la respuesta
+    await handleError(res);
   }
 
   return res.json();
 }
 
-// Obtener las transacciones
+/**
+ * Obtener transacciones
+ */
 export async function getTransactions() {
-  if (!API_URL) {
-    throw new Error("VITE_API_URL no está definida");
-  }
-
   const res = await fetch(`${API_URL}/payments/transactions`, {
-    method: "GET",
     headers: {
       "Content-Type": "application/json",
     },
   });
 
   if (!res.ok) {
-    await handleError(res); // Maneja el error de la respuesta
+    await handleError(res);
   }
 
   return res.json();
 }
 
-// Obtener resumen del dashboard
+/**
+ * Obtener resumen del dashboard
+ */
 export async function getDashboardSummary() {
-  if (!API_URL) {
-    throw new Error("VITE_API_URL no está definida");
-  }
-
   const res = await fetch(`${API_URL}/dashboard/summary`, {
-    method: "GET",
     headers: {
       "Content-Type": "application/json",
     },
   });
 
   if (!res.ok) {
-    await handleError(res); // Maneja el error de la respuesta
+    await handleError(res);
   }
 
   return res.json();
 }
 
-// Obtener productos de Stripe
+/**
+ * Obtener productos desde Stripe (vía backend)
+ */
 export async function getProducts() {
-  if (!API_URL) {
-    throw new Error("VITE_API_URL no está definida");
-  }
-
   const res = await fetch(`${API_URL}/payments/get-products`, {
-    method: "GET",
     headers: {
       "Content-Type": "application/json",
     },
   });
 
   if (!res.ok) {
-    await handleError(res); // Maneja el error de la respuesta
+    await handleError(res);
   }
 
-  return res.json();  // Devuelve la lista de productos
+  return res.json(); // { products: [...] }
 }
