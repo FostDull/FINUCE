@@ -34,11 +34,11 @@ async def stripe_webhook(request: Request):
             secret=STRIPE_WEBHOOK_SECRET,
         )
         logger.info(f"Evento de Stripe recibido: {event}")  # Log para verificar el evento completo
-    except stripe.error.SignatureVerificationError:
-        logger.error("Firma Stripe inválida")
+    except stripe.error.SignatureVerificationError as e:
+        logger.error(f"Firma Stripe inválida: {str(e)}")
         raise HTTPException(status_code=400, detail="Invalid Stripe signature")
-    except ValueError:
-        logger.error("Payload inválido")
+    except ValueError as e:
+        logger.error(f"Payload inválido: {str(e)}")
         raise HTTPException(status_code=400, detail="Invalid payload")
 
     event_type = event["type"]
