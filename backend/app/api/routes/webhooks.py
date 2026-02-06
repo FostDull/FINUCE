@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/webhooks", tags=["Webhooks"])
 
-
 @router.post("/stripe")
 async def stripe_webhook(request: Request):
     """
@@ -34,6 +33,7 @@ async def stripe_webhook(request: Request):
             sig_header=sig_header,
             secret=STRIPE_WEBHOOK_SECRET,
         )
+        logger.info(f"Evento de Stripe recibido: {event}")  # Log para verificar el evento completo
     except stripe.error.SignatureVerificationError:
         logger.error("Firma Stripe inválida")
         raise HTTPException(status_code=400, detail="Invalid Stripe signature")
@@ -52,6 +52,8 @@ async def stripe_webhook(request: Request):
 
     # 3️⃣ Payment succeeded
     if event_type == "payment_intent.succeeded":
+        logger.info(f"Pago exitoso para {intent_id}")
+
         payment_method_id = intent.get("payment_method")
 
         card_info = {}
@@ -69,7 +71,7 @@ async def stripe_webhook(request: Request):
 
         update = {
             "status": intent["status"],  # succeeded
-            "amount_received": intent.get("amount_received", 0) / 100,
+            "amount_received": intent.get("amount_received", 0) / 100,  # Convertimos a dólares
             "currency": intent.get("currency"),
             "paid_at": datetime.utcnow(),
             **card_info,

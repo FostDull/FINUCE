@@ -19,16 +19,18 @@ export default function StripePaymentForm() {
     setLoading(true);
     setErrorMessage(null);
 
+    // Intentar confirmar el pago
     const { error, paymentIntent } = await stripe.confirmPayment({
       elements,
-      redirect: "if_required",
+      redirect: "if_required", // Habilitar la redirección si es necesaria
     });
 
     if (error) {
-      setErrorMessage(error.message);
+      setErrorMessage(error.message); // Mostrar mensaje de error
     } else if (paymentIntent?.status === "succeeded") {
       console.log("✅ Pago confirmado");
-      // window.location.href = "/dashboard/transactions";
+      // Enviar a la página de transacciones
+      window.location.href = "/dashboard/transactions"; // O redirigir a donde necesites
     }
 
     setLoading(false);

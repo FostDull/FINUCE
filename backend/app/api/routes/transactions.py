@@ -15,5 +15,6 @@ def list_transactions():
 
     for tx in transactions:
         tx["id"] = str(tx.pop("_id"))
+        tx["status"] = tx.get("status", "—")  # Asegúrate de devolver el estado correctamente
 
     return {"data": transactions}
