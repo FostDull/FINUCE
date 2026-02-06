@@ -2,7 +2,6 @@ from fastapi import APIRouter, Request, HTTPException
 from datetime import datetime
 import stripe
 import logging
-
 from app.core.config import STRIPE_WEBHOOK_SECRET, STRIPE_SECRET_KEY
 from app.core.mongo import payments_collection
 
@@ -26,6 +25,8 @@ async def stripe_webhook(request: Request):
         logger.warning("Webhook sin Stripe-Signature")
         raise HTTPException(status_code=400, detail="Missing Stripe-Signature")
 
+    logger.info(f"Stripe-Signature: {sig_header}")  # Debugging the signature
+
     # 2️⃣ Verificar firma
     try:
         event = stripe.Webhook.construct_event(
@@ -42,8 +43,12 @@ async def stripe_webhook(request: Request):
         raise HTTPException(status_code=400, detail="Invalid payload")
 
     event_type = event["type"]
-    intent = event["data"]["object"]
-    intent_id = intent["id"]
+    intent = event["data"].get("object", {})
+    intent_id = intent.get("id")
+
+    if not intent_id:
+        logger.warning("No se encontró un ID de intención de pago en el evento")
+        raise HTTPException(status_code=400, detail="Missing payment intent ID")
 
     logger.info(f"📩 Stripe event: {event_type} | {intent_id}")
 
@@ -55,7 +60,6 @@ async def stripe_webhook(request: Request):
         logger.info(f"Pago exitoso para {intent_id}")
 
         payment_method_id = intent.get("payment_method")
-
         card_info = {}
         if payment_method_id:
             try:
