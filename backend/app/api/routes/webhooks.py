@@ -2,6 +2,7 @@ from fastapi import APIRouter, Request, HTTPException
 from datetime import datetime
 import stripe
 import logging
+
 from app.core.config import STRIPE_WEBHOOK_SECRET, STRIPE_SECRET_KEY
 from app.core.mongo import payments_collection
 
@@ -32,7 +33,7 @@ async def stripe_webhook(request: Request):
         event = stripe.Webhook.construct_event(
             payload=payload,
             sig_header=sig_header,
-            secret=STRIPE_WEBHOOK_SECRET,
+            secret=STRIPE_WEBHOOK_SECRET,  # Asegúrate de que esta clave esté bien configurada
         )
         logger.info(f"Evento de Stripe recibido: {event}")  # Log para verificar el evento completo
     except stripe.error.SignatureVerificationError as e:
@@ -70,7 +71,7 @@ async def stripe_webhook(request: Request):
                         "brand": pm["card"]["brand"],
                         "last4": pm["card"]["last4"],
                     }
-            except Exception as e:
+            except stripe.error.StripeError as e:
                 logger.warning(f"No se pudo obtener método de pago: {e}")
 
         update = {
@@ -128,4 +129,4 @@ async def stripe_webhook(request: Request):
         logger.debug(f"Evento ignorado: {event_type}")
 
     # 7️⃣ Stripe exige 200 OK
-    return {"received": True}
+    return {"received": True, "event_type": event_type, "intent_id": intent_id}
