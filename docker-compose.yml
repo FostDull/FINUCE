@@ -43,5 +43,15 @@ services:
     volumes:
       - mongo_data:/data/db
 
+nginx:
+    build: ./nginx
+    container_name: fin-nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+      - frontend
+    restart: always
+
 volumes:
   mongo_data:
