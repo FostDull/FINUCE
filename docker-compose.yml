@@ -1,50 +1,50 @@
 services:
   backend:
-    build: ./backend
+    image: fostdull/fin-backend:latest
     container_name: fin-backend
+    restart: always
     env_file:
-      - ./backend/.env
+      - .env  # En AWS, coloca un solo .env en la misma carpeta que este archivo
     environment:
       - PYTHONUNBUFFERED=1
     dns:
       - 8.8.8.8
       - 1.1.1.1
-    ports:
-      - "8000:8000"
+    # Nota: No exponemos el puerto 8000 al exterior por seguridad; 
+    # solo Nginx hablará con él internamente.
+    expose:
+      - "8000"
     depends_on:
       - mongo
       - redis
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000
 
   frontend:
-    build: ./frontend
+    image: fostdull/fin-frontend:latest
     container_name: fin-frontend
+    restart: always
     env_file:
-      - ./frontend/.env
-    ports:
-      - "5173:5173"
-    depends_on:
-      - backend
+      - .env
     stdin_open: true
     tty: true
-    command: npm run dev
+    # En producción usualmente se sirve con Nginx, 
+    # pero mantenemos tu comando actual por compatibilidad.
+    command: npm run dev 
 
   redis:
     image: redis:7
     container_name: fin-redis
-    ports:
-      - "6379:6379"
+    restart: always
 
   mongo:
     image: mongo:6
     container_name: fin-mongo
-    ports:
-      - "27017:27017"
+    restart: always
     volumes:
       - mongo_data:/data/db
 
-nginx:
-    build: ./nginx
+  nginx:
+    image: fostdull/fin-nginx:latest
     container_name: fin-nginx
     ports:
       - "80:80"
